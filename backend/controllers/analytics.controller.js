@@ -67,6 +67,13 @@ export async function getAnalyticsDashboard(req, res, next) {
         savedCost: parseFloat((worstCaseCost - totalCost).toFixed(6)),
         savingsPercent: worstCaseCost > 0 ? parseFloat((((worstCaseCost - totalCost) / worstCaseCost) * 100).toFixed(1)) : 0,
       },
+      budget: tracker ? {
+        total: tracker.total,
+        spent: tracker.spent,
+        remaining: Math.max(0, tracker.total - tracker.spent),
+        percentUsed: (tracker.spent / tracker.total) * 100,
+        mode: tracker.mode
+      } : { total: 2.0, spent: 0, remaining: 2.0, percentUsed: 0, mode: 'normal' },
       modelDistribution,
       complexityBuckets,
       recentHistory: richHistory, // Send the full rich history

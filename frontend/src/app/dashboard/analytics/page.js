@@ -44,6 +44,10 @@ export default function AnalyticsDashboard() {
     score: h.score
   }));
 
+  const avgCostPerQuery = data.summary.totalCalls > 0 ? data.summary.totalCost / data.summary.totalCalls : 0;
+  const remainingQueries = avgCostPerQuery > 0 ? Math.floor(data.budget.remaining / avgCostPerQuery) : '∞';
+
+
   return (
     <div className="space-y-6 animate-slide-up pr-2 custom-scrollbar">
       <div className="inline-flex items-center gap-3 bg-mint border-[4px] border-ink px-5 py-2.5 shadow-[6px_6px_0_#1A1A2E] rounded-2xl mb-2 -rotate-1 hover:rotate-0 transition-transform cursor-default">
@@ -51,6 +55,50 @@ export default function AnalyticsDashboard() {
         <h1 className="text-2xl md:text-3xl font-black text-ink uppercase tracking-tight">Usage & Analytics</h1>
       </div>
       <p className="text-ink font-bold text-base md:text-lg opacity-80 ml-1 mb-6">Real-time insights into your AI budget and routing efficiency.</p>
+
+      {/* Budget Forecast Widget */}
+      <div className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-black uppercase tracking-widest text-ink border-b-4 border-ink pb-2 inline-block">Budget Forecast</h3>
+          <span className={`px-3 py-1 font-black text-xs uppercase border-2 border-ink rounded-lg shadow-[2px_2px_0_#1A1A2E] ${data.budget.mode === 'degraded' ? 'bg-coral text-white' : 'bg-mint text-ink'}`}>
+            {data.budget.mode === 'degraded' ? 'DEGRADED MODE' : 'NORMAL MODE'}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs uppercase font-black text-ink/60">Budget Remaining</span>
+            <span className="text-4xl font-black text-ink">${data.budget.remaining.toFixed(3)}</span>
+            <span className="text-xs font-bold text-ink/70">out of ${data.budget.total.toFixed(2)}</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs uppercase font-black text-ink/60">Avg Cost / Query</span>
+            <span className="text-4xl font-black text-ink">${avgCostPerQuery.toFixed(4)}</span>
+            <span className="text-xs font-bold text-ink/70">across {data.summary.totalCalls} queries</span>
+          </div>
+
+          <div className="flex flex-col gap-1 bg-cream border-2 border-ink p-4 rounded-xl shadow-[4px_4px_0_#1A1A2E]">
+            <span className="text-xs uppercase font-black text-ink/60">Est. Remaining Queries</span>
+            <span className="text-4xl font-black text-coral">{remainingQueries}</span>
+            <span className="text-xs font-bold text-ink/70">at current burn rate</span>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-6">
+          <div className="flex justify-between text-xs font-black uppercase tracking-widest text-ink mb-2">
+            <span>Spent: ${data.budget.spent.toFixed(3)}</span>
+            <span>{data.budget.percentUsed.toFixed(1)}% Used</span>
+          </div>
+          <div className="w-full h-6 bg-cream border-[3px] border-ink rounded-full overflow-hidden flex shadow-[inset_2px_2px_0_rgba(0,0,0,0.1)]">
+            <div 
+              className={`h-full border-r-[3px] border-ink transition-all duration-1000 ${data.budget.percentUsed > 80 ? 'bg-coral' : 'bg-mint'}`} 
+              style={{ width: `${Math.min(100, data.budget.percentUsed)}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
 
       {/* Top Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
