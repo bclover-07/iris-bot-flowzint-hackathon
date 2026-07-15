@@ -154,9 +154,13 @@ export default function AvatarChat() {
           // AnimationMixer removed to prevent conflicts with procedural VRM gestures
 
           const isMobile = responsiveCamera.getIsMobile();
-          gestureEngine.init(vrm, scene, isMobile);
-          expressionCtrl.init(vrm, morphMeshes);
-          idleSystem.init(gestureEngine, expressionCtrl);
+          try {
+            if (gestureEngine.init) gestureEngine.init(vrm, scene, isMobile);
+            if (expressionCtrl.init) expressionCtrl.init(vrm, morphMeshes);
+            if (idleSystem.init) idleSystem.init(gestureEngine, expressionCtrl);
+          } catch (initErr) {
+            console.error('Error initializing avatar systems:', initErr);
+          }
 
           setAvatarReady(true);
           setStatus('Ready');
@@ -199,12 +203,15 @@ export default function AvatarChat() {
 
 
 
-        if (gestureEngineRef.current?.initialized) {
-          gestureEngineRef.current.update(t, delta);
-        }
-
-        if (expressionCtrlRef.current) {
-          expressionCtrlRef.current.update(delta, t);
+        try {
+          if (gestureEngineRef.current?.initialized && gestureEngineRef.current.update) {
+            gestureEngineRef.current.update(t, delta);
+          }
+          if (expressionCtrlRef.current && expressionCtrlRef.current.update) {
+            expressionCtrlRef.current.update(delta, t);
+          }
+        } catch (updateErr) {
+          console.error('Avatar update error:', updateErr);
         }
 
         if (idleSystemRef.current) {
@@ -429,10 +436,22 @@ export default function AvatarChat() {
       }
 
       if (expressionCtrl) {
-        expressionCtrl.setExpression(
-          responseAnalysis.expression,
-          responseAnalysis.expressionWeight
-        );
+        // Backend Sentiment driven expressions
+        let finalExpression = responseAnalysis.expression;
+        let finalWeight = responseAnalysis.expressionWeight;
+        
+        if (res.sentiment && res.sentiment.label) {
+          const sentLabel = res.sentiment.label;
+          if (sentLabel === 'VERY_POSITIVE' || sentLabel === 'POSITIVE') {
+            finalExpression = 'happy';
+            finalWeight = 0.8;
+          } else if (sentLabel === 'VERY_NEGATIVE' || sentLabel === 'NEGATIVE' || sentLabel === 'FRUSTRATED') {
+            finalExpression = 'sad'; // Empathetic concern
+            finalWeight = 0.7;
+          }
+        }
+        
+        expressionCtrl.setExpression(finalExpression, finalWeight);
         expressionCtrl.setBrowRaise(responseAnalysis.browRaise || 0);
       }
 

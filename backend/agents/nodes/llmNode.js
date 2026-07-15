@@ -53,6 +53,11 @@ Today's date: ${new Date().toLocaleDateString()}.`;
   if (webSearchResults) {
     baseSystemPrompt += `\n\n[LIVE WEB SEARCH RESULTS FOR USER QUERY]:\n${webSearchResults}\n\nUse the above real-time data to answer the user's query accurately. Do NOT mention that you used a proxy or DuckDuckGo, just provide the answer seamlessly.`;
   }
+  
+  // Local Knowledge Base RAG integration
+  if (state.retrievedContext && state.retrievedContext.source === 'knowledge-base') {
+    baseSystemPrompt += `\n\n[LOCAL KNOWLEDGE BASE CONTEXT]:\n${state.retrievedContext.answer}\n\nUse the above context to answer the user's query accurately and conversationally. Expand upon it slightly to make it sound natural and helpful.`;
+  }
 
   // Handle Socratic/Guided Mentor mode
   const finalSystemPromptSnippets = [baseSystemPrompt];

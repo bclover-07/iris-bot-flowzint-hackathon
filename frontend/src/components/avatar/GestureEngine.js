@@ -1206,6 +1206,156 @@ export class GestureEngine {
     this.isMobile = false;
     this.isVrm = false;
   }
-}
 
+  init(vrm, scene, isMobile) {
+    this.isMobile = !!isMobile;
+    this.boneNodes = {};
     
+    if (vrm && vrm.humanoid) {
+      this.isVrm = true;
+      for (const [logicalName, vrmName] of Object.entries(VRM_BONE_MAP)) {
+        // three-vrm v1+ getNormalizedBoneNode or fallback to getRawBoneNode
+        const node = vrm.humanoid.getNormalizedBoneNode(vrmName) || vrm.humanoid.getRawBoneNode(vrmName);
+        if (node) {
+          this.boneNodes[logicalName] = node;
+          this.currentPose[logicalName] = new this.THREE.Quaternion().copy(node.quaternion);
+        }
+      }
+    } else if (scene) {
+      scene.traverse((node) => {
+        if (node.isBone) {
+          for (const [logicalName, searchName] of Object.entries(VRM_BONE_MAP)) {
+            if (node.name.toLowerCase().includes(searchName.toLowerCase())) {
+              this.boneNodes[logicalName] = node;
+              this.currentPose[logicalName] = new this.THREE.Quaternion().copy(node.quaternion);
+            }
+          }
+        }
+      });
+    }
+    this.initialized = true;
+  }
+
+  setGesture(gestureName) {
+    if (!this.initialized || !gestureName) {
+      this.activeGesture = null;
+      return;
+    }
+    if (this.gestures[gestureName]) {
+      this.activeGesture = gestureName;
+      this.gestureTimer = 0;
+    }
+  }
+
+  queueGestures(gestures) {
+    if (!Array.isArray(gestures)) return;
+    this.gestureQueue.push(...gestures);
+  }
+
+  clearQueue() {
+    this.gestureQueue = [];
+  }
+
+  isGestureActive() {
+    return this.activeGesture !== null;
+  }
+
+  update(t, delta) {
+    if (!this.initialized) return;
+
+    const targetPose = {};
+    const Q = this.THREE.Quaternion;
+    const E = this.THREE.Euler;
+    
+    for (const [boneName, transform] of Object.entries(BASE_ARMS_DOWN)) {
+      if (!this.boneNodes[boneName]) continue;
+      const q = new Q();
+      if (transform.euler) {
+        q.setFromEuler(new E(...transform.euler));
+      } else if (transform.axis && transform.angle !== undefined) {
+        q.setFromAxisAngle(new this.THREE.Vector3(...transform.axis).normalize(), transform.angle);
+      }
+      targetPose[boneName] = q;
+    }
+
+    let transitionSpeed = 5;
+    if (this.activeGesture && this.gestures[this.activeGesture]) {
+      const gesture = this.gestures[this.activeGesture];
+      this.gestureTimer += delta;
+      transitionSpeed = gesture.transitionSpeed || 5;
+
+      const progress = Math.min(this.gestureTimer / gesture.duration, 1.0);
+      const weight = Math.sin(progress * Math.PI); 
+
+      if (this.gestureTimer >= gesture.duration) {
+        if (this.gestureQueue.length > 0) {
+          this.activeGesture = this.gestureQueue.shift();
+          this.gestureTimer = 0;
+        } else {
+          this.activeGesture = null;
+        }
+      }
+      this.applyGestureTransforms(gesture, targetPose, weight, t, Q, E);
+    }
+
+    for (const boneName in targetPose) {
+      if (!this.currentPose[boneName]) {
+        this.currentPose[boneName] = new Q().copy(targetPose[boneName]);
+      } else {
+        this.currentPose[boneName].slerp(targetPose[boneName], delta * transitionSpeed);
+      }
+    }
+
+    for (const boneName in this.currentPose) {
+      const node = this.boneNodes[boneName];
+      if (!node) continue;
+      const q = this.currentPose[boneName].clone();
+      
+      if (BONE_LIMITS[boneName]) {
+        const euler = new E().setFromQuaternion(q);
+        const limit = BONE_LIMITS[boneName];
+        euler.x = Math.max(limit.minX, Math.min(limit.maxX, euler.x));
+        euler.y = Math.max(limit.minY, Math.min(limit.maxY, euler.y));
+        euler.z = Math.max(limit.minZ, Math.min(limit.maxZ, euler.z));
+        q.setFromEuler(euler);
+      }
+      node.quaternion.copy(q);
+    }
+  }
+
+  applyGestureTransforms(gesture, targetPose, weight, t, Q, E) {
+    const applySection = (section) => {
+      if (!section) return;
+      for (const [boneName, transform] of Object.entries(section)) {
+        if (!this.boneNodes[boneName]) continue;
+        const q = new Q();
+        if (transform.euler) {
+          q.setFromEuler(new E(...transform.euler));
+        } else if (transform.axis && transform.angle !== undefined) {
+          q.setFromAxisAngle(new this.THREE.Vector3(...transform.axis).normalize(), transform.angle);
+        }
+        if (targetPose[boneName]) {
+          targetPose[boneName].slerp(q, weight);
+        } else {
+          targetPose[boneName] = new Q().slerp(q, weight);
+        }
+      }
+    };
+
+    applySection(gesture.bones);
+    applySection(gesture.fingers);
+
+    if (gesture.oscillation) {
+      for (const [boneName, osc] of Object.entries(gesture.oscillation)) {
+        if (!this.boneNodes[boneName]) continue;
+        const offset = Math.sin(t * osc.frequency * Math.PI * 2) * osc.amplitude * weight;
+        const qOsc = new Q().setFromAxisAngle(new this.THREE.Vector3(...osc.axis).normalize(), offset);
+        if (targetPose[boneName]) {
+          targetPose[boneName].multiply(qOsc);
+        } else {
+          targetPose[boneName] = qOsc;
+        }
+      }
+    }
+  }
+}

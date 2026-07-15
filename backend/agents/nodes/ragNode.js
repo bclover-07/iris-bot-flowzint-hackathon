@@ -24,18 +24,18 @@ export async function ragNode(state) {
   const ragResult = await searchKnowledgeBase(message);
   if (ragResult && ragResult.score > 0.55) {
     const routing = {
-      model: 'Local KB',
-      tier: 'cached',
-      reason: `Answered from vector knowledge base (Score: ${Math.round(ragResult.score * 100)}%)`,
+      model: 'Local KB + LLM',
+      tier: 'enhanced',
+      reason: `Retrieved context from vector knowledge base (Score: ${Math.round(ragResult.score * 100)}%) to feed into LLM`,
       score: Math.round(ragResult.score * 100),
-      modelDisplayName: 'Local KB',
+      modelDisplayName: 'RAG Pipeline',
       degraded: false,
       budgetMode: budgetStatsBefore.mode,
     };
 
     return {
       retrievedContext: {
-        answer: ragResult.answer,
+        answer: ragResult.answer, // Note: storing inside retrievedContext so LLM can read it
         source: 'knowledge-base',
         routing,
         cost: {
@@ -47,7 +47,7 @@ export async function ragNode(state) {
           mode: budgetStatsBefore.mode,
         },
       },
-      answer: ragResult.answer,
+      // Removed root answer so graph doesn't skip LLM
       trace: ['ragNode']
     };
   }
