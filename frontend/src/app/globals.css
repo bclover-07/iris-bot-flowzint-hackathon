@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+/* 
+  TAILWIND V4 SAFELIST FOR DYNAMIC CLASSES
+  The following classes are used dynamically via string interpolation (e.g. bg-${color}) 
+  and must be included here so Tailwind generates them.
+  
+  bg-cream bg-ink bg-iris-purple bg-coral bg-sunny bg-mint bg-sky bg-peach
+  bg-cream/10 bg-ink/10 bg-iris-purple/10 bg-coral/10 bg-sunny/10 bg-mint/10 bg-sky/10 bg-peach/10
+  border-cream border-ink border-iris-purple border-coral border-sunny border-mint border-sky border-peach
+  text-cream text-ink text-iris-purple text-coral text-sunny text-mint text-sky text-peach
+  shadow-cream shadow-ink shadow-iris-purple shadow-coral shadow-sunny shadow-mint shadow-sky shadow-peach
+  shadow-[6px_6px_0_var(--color-iris-purple)] shadow-[6px_6px_0_var(--color-sunny)] shadow-[6px_6px_0_var(--color-peach)]
+  shadow-[6px_6px_0_var(--color-mint)] shadow-[6px_6px_0_var(--color-coral)] shadow-[6px_6px_0_var(--color-sky)]
+  shadow-[6px_6px_0_var(--color-cream)] shadow-[6px_6px_0_var(--color-ink)]
+*/
+
+@theme {
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* 8-Color Neo-Brutalist Palette */
+  --color-cream: #FFF8F0;
+  --color-ink: #1A1A2E;
+  --color-iris-purple: #7C3AED;
+  --color-coral: #FF6B6B;
+  --color-sunny: #FFD93D;
+  --color-mint: #6BCB77;
+  --color-sky: #4D96FF;
+  --color-peach: #FF9A76;
+
+  /* We map standard brutalist names to the new palette to minimize refactoring where possible */
+  --color-brutal-black: var(--color-cream); /* Reversing the logic: black is now cream */
+  --color-brutal-card: #FFFFFF;
+  --color-brutal-border: var(--color-ink);
+  --color-brutal-hover: #F2E8DC;
+
+  --color-iris-300: #C4B5FD;
+  --color-iris-400: #A78BFA;
+  --color-iris-500: #8B5CF6;
+  --color-iris-600: #7C3AED;
+  --color-iris-700: #6D28D9;
+}
+
+@layer base {
+  body {
+    @apply bg-cream text-ink font-sans antialiased selection:bg-sunny selection:text-ink;
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+  }
+
+  /* Custom Scrollbar for Neo-Brutalist Theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink);
+    border-radius: 100px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-iris-purple);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(26, 26, 46, 0.3);
+    border-radius: 100px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(26, 26, 46, 0.6);
+  }
+}
+
+@layer utilities {
+  .font-caveat {
+    font-family: var(--font-caveat), cursive;
+  }
+
+  /* Core Neo-Brutalist UI Components */
+  .neo-card {
+    @apply bg-white border-[4px] border-ink rounded-3xl relative transition-all duration-300;
+    box-shadow: 8px 8px 0px var(--color-ink);
+  }
+  
+  .neo-card:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px 0px var(--color-ink);
+  }
+
+  .btn-primary {
+    @apply bg-iris-purple text-white font-bold px-6 py-3 border-[4px] border-ink rounded-full transition-all duration-300 flex items-center gap-2;
+    box-shadow: 6px 6px 0px var(--color-ink);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px var(--color-ink);
+  }
+  
+  .btn-primary:active:not(:disabled) {
+    transform: translate(6px, 6px);
+    box-shadow: 0px 0px 0px var(--color-ink);
+  }
+
+  .btn-outline {
+    @apply bg-cream text-iris-purple font-bold px-6 py-3 border-[4px] border-ink rounded-full transition-all duration-300 flex items-center gap-2;
+    box-shadow: 6px 6px 0px var(--color-ink);
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    @apply bg-white text-ink;
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0px var(--color-ink);
+  }
+
+  .btn-outline:active:not(:disabled) {
+    transform: translate(6px, 6px);
+    box-shadow: 0px 0px 0px var(--color-ink);
+  }
+
+  .input-brutal {
+    @apply w-full bg-white border-[4px] border-ink text-ink p-4 outline-none transition-all duration-300 font-medium rounded-2xl;
+  }
+
+  .input-brutal:focus {
+    @apply border-iris-purple;
+    box-shadow: 6px 6px 0px var(--color-iris-purple);
+    transform: translate(-2px, -2px);
+  }
+  
+  /* Input placeholder color override */
+  .input-brutal::placeholder {
+    color: #8C8C8C;
+  }
+
+  /* Colored Card Accents - now with top borders fitting rounded corners */
+  .card-coral { border-top-width: 12px; border-top-color: var(--color-coral); }
+  .card-sunny { border-top-width: 12px; border-top-color: var(--color-sunny); }
+  .card-mint { border-top-width: 12px; border-top-color: var(--color-mint); }
+  .card-sky { border-top-width: 12px; border-top-color: var(--color-sky); }
+  .card-peach { border-top-width: 12px; border-top-color: var(--color-peach); }
+  .card-purple { border-top-width: 12px; border-top-color: var(--color-iris-purple); }
+  
+  .card-left-coral { border-left-width: 16px; border-left-color: var(--color-coral); }
+  .card-left-sunny { border-left-width: 16px; border-left-color: var(--color-sunny); }
+  .card-left-mint { border-left-width: 16px; border-left-color: var(--color-mint); }
+  .card-left-purple { border-left-width: 16px; border-left-color: var(--color-iris-purple); }
+
+  /* Sticker Tags */
+  .tag-sticker {
+    @apply px-4 py-1 font-bold text-xs uppercase border-[3px] border-ink inline-block bg-white text-ink rounded-full;
+    box-shadow: 4px 4px 0px var(--color-ink);
+  }
+
+  /* Animated Utilities */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-wiggle {
+    animation: wiggle 2s ease-in-out infinite;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  /* Gradient Text - adapted for light theme */
+  .gradient-text {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, var(--color-iris-purple), var(--color-coral));
+  }
+
+  /* Skeleton Shimmer for Light Theme */
+  .skeleton {
+    @apply relative overflow-hidden bg-gray-200 border-2 border-ink/20;
+  }
+  
+  .skeleton::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.4) 20%,
+      rgba(255, 255, 255, 0.6) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+    content: '';
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(2deg); }
+  75% { transform: translateY(10px) rotate(-2deg); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
