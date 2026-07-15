@@ -1205,5 +1205,7 @@ export class GestureEngine {
     this.initialized = false;
     this.isMobile = false;
     this.isVrm = false;
+  }
+}
 
     
