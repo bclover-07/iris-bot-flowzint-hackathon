@@ -1,0 +1,67 @@
+const fs = require('fs');
+const path = require('path');
+
+const kb = [
+  // Math
+  { question: "What is the Pythagorean theorem?", answer: "The Pythagorean theorem states that in a right-angled triangle, the square of the hypotenuse is equal to the sum of the squares of the other two sides ($a^2 + b^2 = c^2$)." },
+  { question: "Explain the concept of a derivative in calculus.", answer: "A derivative measures how a function changes as its input changes. It represents the instantaneous rate of change or the slope of the tangent line to the function's curve at a given point." },
+  { question: "What is Euler's number (e)?", answer: "Euler's number ($e \\approx 2.718$) is a mathematical constant that is the base of the natural logarithm. It is the limit of $(1 + 1/n)^n$ as $n$ approaches infinity and is widely used in continuous growth models." },
+  { question: "What is the Fibonacci sequence?", answer: "The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, usually starting with 0 and 1. (0, 1, 1, 2, 3, 5, 8, 13...)" },
+  { question: "What is the difference between mean, median, and mode?", answer: "Mean is the average of a dataset. Median is the middle value when the data is ordered. Mode is the most frequently occurring value in the dataset." },
+  { question: "What is a prime number?", answer: "A prime number is a natural number greater than 1 that cannot be formed by multiplying two smaller natural numbers. Its only divisors are 1 and itself." },
+  { question: "What is the fundamental theorem of calculus?", answer: "It links the concept of differentiating a function with the concept of integrating a function, stating that differentiation and integration are inverse processes." },
+  { question: "What is a matrix in linear algebra?", answer: "A matrix is a rectangular array of numbers, symbols, or expressions arranged in rows and columns, used to represent linear transformations and solve systems of linear equations." },
+  { question: "What is standard deviation?", answer: "Standard deviation is a measure of the amount of variation or dispersion in a set of values. A low standard deviation indicates that values tend to be close to the mean." },
+  { question: "Explain the concept of probability.", answer: "Probability is the branch of mathematics concerning numerical descriptions of how likely an event is to occur, ranging from 0 (impossible) to 1 (certain)." },
+  
+  // Computer Science
+  { question: "What is Big O notation?", answer: "Big O notation is used to describe the performance or complexity of an algorithm, specifically describing the worst-case scenario for execution time or space used as the input size grows." },
+  { question: "Explain the difference between TCP and UDP.", answer: "TCP is connection-oriented and guarantees reliable, ordered delivery of data packets. UDP is connectionless and sends packets without guaranteeing delivery, making it faster but less reliable." },
+  { question: "What is a REST API?", answer: "REST (Representational State Transfer) is an architectural style for APIs that uses standard HTTP methods (GET, POST, PUT, DELETE) and treats data as resources identified by URLs." },
+  { question: "What is polymorphism in Object-Oriented Programming?", answer: "Polymorphism allows objects of different classes to be treated as objects of a common superclass, allowing a single interface to represent different underlying forms (data types)." },
+  { question: "What is the difference between a stack and a queue?", answer: "A stack is LIFO (Last-In-First-Out), like a stack of plates. A queue is FIFO (First-In-First-Out), like a line of people waiting." },
+  { question: "What is dynamic programming?", answer: "Dynamic programming is a method for solving complex problems by breaking them down into simpler subproblems and storing their solutions to avoid redundant computations (memoization/tabulation)." },
+  { question: "What is DNS?", answer: "DNS (Domain Name System) is the phonebook of the internet. It translates human-readable domain names (like example.com) into machine-readable IP addresses." },
+  { question: "Explain the concept of recursion.", answer: "Recursion is a programming technique where a function calls itself in order to solve smaller instances of the same problem, ending when it reaches a base case." },
+  { question: "What is a hash table?", answer: "A hash table is a data structure that maps keys to values for highly efficient lookup, using a hash function to compute an index into an array of buckets." },
+  { question: "What is the difference between Git and GitHub?", answer: "Git is a local version control system that tracks changes to files. GitHub is a cloud-based hosting service that lets individuals and teams manage Git repositories online." },
+  
+  // History
+  { question: "What were the main causes of World War I?", answer: "The main causes were Militarism, Alliances, Imperialism, and Nationalism (MAIN), triggered by the assassination of Archduke Franz Ferdinand of Austria in 1914." },
+  { question: "Who was Julius Caesar?", answer: "Julius Caesar was a Roman general and statesman who played a critical role in the events that led to the demise of the Roman Republic and the rise of the Roman Empire." },
+  { question: "What was the Renaissance?", answer: "The Renaissance was a fervent period of European cultural, artistic, political, and economic 'rebirth' following the Middle Ages, typically spanning the 14th to the 17th century." },
+  { question: "What was the Industrial Revolution?", answer: "The Industrial Revolution was the transition to new manufacturing processes in Europe and the United States from about 1760 to 1840, marked by the shift from hand production to machines." },
+  { question: "When did the French Revolution happen?", answer: "The French Revolution took place between 1789 and 1799, leading to the overthrow of the monarchy, the establishment of a republic, and the rise of Napoleon Bonaparte." },
+  { question: "What was the Cold War?", answer: "The Cold War was a period of geopolitical tension between the United States and the Soviet Union and their respective allies, spanning roughly from 1947 to 1991." },
+  { question: "Who wrote the Declaration of Independence?", answer: "Thomas Jefferson was the principal author of the Declaration of Independence, which was adopted by the Second Continental Congress on July 4, 1776." },
+  { question: "What was the Magna Carta?", answer: "The Magna Carta was a royal charter of rights agreed to by King John of England in 1215, establishing the principle that everyone, including the king, was subject to the law." },
+  { question: "Who was Alexander the Great?", answer: "Alexander the Great was a king of the ancient Greek kingdom of Macedon who conquered the Persian Empire and created one of the largest empires in history by age 30." },
+  { question: "What was the Silk Road?", answer: "The Silk Road was an ancient network of trade routes that connected the East and West, facilitating economic, cultural, political, and religious interactions." },
+
+  // Physics
+  { question: "What is Newton's First Law of Motion?", answer: "Newton's First Law (Inertia) states that an object will remain at rest or in uniform motion in a straight line unless acted upon by an external force." },
+  { question: "What is the theory of general relativity?", answer: "Proposed by Albert Einstein, general relativity describes gravity not as a force, but as a curvature of spacetime caused by mass and energy." },
+  { question: "What is the speed of light?", answer: "The speed of light in a vacuum is exactly 299,792,458 meters per second (approximately $3 \\times 10^8$ m/s)." },
+  { question: "Explain the concept of kinetic energy.", answer: "Kinetic energy is the energy that an object possesses due to its motion. It is defined as the work needed to accelerate a body of a given mass from rest to its stated velocity." },
+  { question: "What is quantum entanglement?", answer: "Quantum entanglement is a physical phenomenon that occurs when pairs or groups of particles are generated or interact in ways such that the quantum state of each particle cannot be described independently of the state of the others." },
+  { question: "What is the First Law of Thermodynamics?", answer: "The First Law of Thermodynamics, or the law of conservation of energy, states that energy cannot be created or destroyed, only altered in form." },
+  { question: "What is a black hole?", answer: "A black hole is a region of spacetime where gravity is so strong that nothing—no particles or even electromagnetic radiation such as light—can escape from it." },
+  { question: "What is the Heisenberg Uncertainty Principle?", answer: "It states that certain pairs of physical properties, like position and momentum, cannot both be known to arbitrary precision simultaneously." },
+  { question: "What is an electron?", answer: "An electron is a subatomic particle with a negative elementary electric charge, acting as the primary carrier of electricity in solids." },
+  { question: "What is string theory?", answer: "String theory is a theoretical framework in which the point-like particles of particle physics are replaced by one-dimensional objects called strings." },
+
+  // Biology
+  { question: "What is the function of mitochondria?", answer: "Mitochondria are often called the 'powerhouses' of the cell; they generate most of the cell's supply of adenosine triphosphate (ATP), used as a source of chemical energy." },
+  { question: "What is DNA?", answer: "DNA (Deoxyribonucleic acid) is a molecule composed of two polynucleotide chains that coil around each other to form a double helix, carrying genetic instructions for development, functioning, growth, and reproduction." },
+  { question: "Explain the process of photosynthesis.", answer: "Photosynthesis is the process used by plants, algae, and certain bacteria to harness energy from sunlight and turn it into chemical energy, using water and carbon dioxide to create oxygen and glucose." },
+  { question: "What is natural selection?", answer: "Natural selection is the differential survival and reproduction of individuals due to differences in phenotype; it is a key mechanism of evolution, proposed by Charles Darwin." },
+  { question: "What is an enzyme?", answer: "Enzymes are proteins that act as biological catalysts, accelerating chemical reactions inside cells without being consumed in the process." },
+  { question: "What is mitosis?", answer: "Mitosis is a part of the cell cycle in which replicated chromosomes are separated into two new nuclei, resulting in two identical daughter cells." },
+  { question: "What is the central dogma of molecular biology?", answer: "The central dogma explains the flow of genetic information: DNA is transcribed into RNA, which is then translated into proteins." },
+  { question: "What are antibodies?", answer: "Antibodies are large, Y-shaped proteins produced by the immune system to identify and neutralize foreign objects such as pathogenic bacteria and viruses." },
+  { question: "What is homeostasis?", answer: "Homeostasis is the state of steady internal, physical, and chemical conditions maintained by living systems, regardless of external environmental changes." },
+  { question: "What is a microbiome?", answer: "A microbiome is the community of microorganisms (such as fungi, bacteria, and viruses) that exists in a particular environment, such as the human gut." }
+];
+
+fs.writeFileSync(path.join(__dirname, './data/knowledge-base.json'), JSON.stringify(kb, null, 2));
+console.log('Successfully generated 50 educational Q&A pairs for knowledge base.');
