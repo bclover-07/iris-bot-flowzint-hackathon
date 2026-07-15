@@ -164,7 +164,7 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
             value={message}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={budgetExceeded ? 'Budget exceeded...' : 'Ask IRIS anything...'}
+            placeholder={budgetExceeded ? 'Budget exceeded...' : 'Ask IRIS Bot anything...'}
             disabled={disabled || budgetExceeded}
             rows={1}
             className="w-full bg-cream border-[3px] border-ink rounded-2xl text-ink py-3.5 px-5 outline-none transition-all duration-300 font-medium resize-none min-h-[52px] max-h-[160px] disabled:opacity-50 disabled:cursor-not-allowed text-base shadow-[4px_4px_0_#1A1A2E] focus:border-iris-purple focus:shadow-[4px_4px_0_var(--color-iris-purple)] custom-scrollbar placeholder:text-ink/40"

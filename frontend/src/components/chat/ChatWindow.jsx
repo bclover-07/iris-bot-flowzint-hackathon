@@ -23,9 +23,9 @@ export default function ChatWindow({ messages, isLoading }) {
           >
             ✦
           </motion.div>
-          <h2 className="text-3xl md:text-4xl font-black text-ink mb-3 tracking-tight">Welcome to IRIS</h2>
+          <h2 className="text-3xl md:text-4xl font-black text-ink mb-3 tracking-tight">Welcome to IRIS Bot</h2>
           <p className="text-ink/70 font-bold max-w-md mb-8 text-base md:text-lg leading-relaxed">
-            Ask anything — from simple facts to complex code problems. Watch how IRIS routes each query.
+            Ask anything — from simple facts to complex code problems. Watch how IRIS Bot routes each query.
           </p>
           
           {/* Suggestion cards - compact layout to avoid overlapping input */}

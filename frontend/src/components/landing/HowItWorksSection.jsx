@@ -5,7 +5,7 @@ const steps = [
   {
     num: "1",
     title: "Ask a Question",
-    desc: "Type your query into the IRIS chat interface.",
+    desc: "Type your query into the IRIS Bot chat interface.",
     color: "mint"
   },
   {
@@ -17,7 +17,7 @@ const steps = [
   {
     num: "3",
     title: "Smart Routing",
-    desc: "IRIS evaluates complexity and routes to Kimi, Haiku, or Sonnet.",
+    desc: "IRIS Bot evaluates complexity and routes to Kimi, Haiku, or Sonnet.",
     color: "sunny"
   },
   {
@@ -41,7 +41,7 @@ export default function HowItWorksSection() {
             <span className="tag-sticker bg-mint text-ink rotate-2">The Process</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-ink mb-6">
-            How <span className="text-iris-purple font-caveat text-5xl md:text-6xl tracking-wider">IRIS</span> Works
+            How <span className="text-iris-purple font-caveat text-5xl md:text-6xl tracking-wider">IRIS Bot</span> Works
           </h2>
           <p className="text-xl text-ink font-medium">
             A transparent pipeline that protects your budget while delivering the best educational answers.

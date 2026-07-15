@@ -29,7 +29,7 @@ export default function AvatarChat() {
   const responsiveCameraRef = useRef(null);
 
   const [messages, setMessages] = useState([
-    { role: 'avatar', text: "Hi! I'm Iris, your AI learning assistant! Ask me anything — I'll help you learn. ✨" }
+    { role: 'avatar', text: "Hi! I'm Iris Bot, your AI learning assistant! Ask me anything — I'll help you learn. ✨" }
   ]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('Loading avatar...');

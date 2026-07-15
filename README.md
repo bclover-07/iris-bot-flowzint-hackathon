@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/shivam77kk/iris-bot-flowzint-hackathon/main/frontend/public/favicon.ico" alt="IRIS Logo" width="100"/>
-  <h1>IRIS+ | FlowZint AI Hackathon 2026</h1>
+  <img src="https://raw.githubusercontent.com/shivam77kk/iris-bot-flowzint-hackathon/main/frontend/public/favicon.ico" alt="IRIS Bot Logo" width="100"/>
+  <h1>IRIS Bot | FlowZint AI Hackathon 2026</h1>
   <p><strong>The Cost-Aware Educational Support Chat Bot</strong></p>
   <p>Category: <strong>Support Chat Bot</strong></p>
 
@@ -18,10 +18,10 @@ Educational platforms either:
 1. Eat massive API costs allowing unrestricted usage of GPT-4/Claude Sonnet.
 2. Provide a poor user experience by restricting students to cheap, hallucination-prone models.
 
-## 💡 Our Solution: IRIS+
+## 💡 Our Solution: IRIS Bot
 
-**IRIS+** is a smart educational support bot that introduces **Cost-Aware Dynamic Routing**. 
-Instead of sending every query to the most expensive model, IRIS analyzes the *intent, complexity, and domain* of the student's question and routes it to the most cost-effective model capable of answering it correctly.
+**IRIS Bot** is a smart educational support bot that introduces **Cost-Aware Dynamic Routing**. 
+Instead of sending every query to the most expensive model, IRIS Bot analyzes the *intent, complexity, and domain* of the student's question and routes it to the most cost-effective model capable of answering it correctly.
 
 ### 💰 The Result? Up to 93% Cost Savings
 
@@ -100,7 +100,7 @@ npm install
 npm run dev
 \`\`\`
 
-Visit `http://localhost:3000` to interact with IRIS.
+Visit `http://localhost:3000` to interact with IRIS Bot.
 
 ## 🧑‍💻 Team
 

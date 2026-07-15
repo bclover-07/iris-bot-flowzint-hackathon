@@ -25,7 +25,7 @@ export default function ChatMessage({ message }) {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'IRIS Response',
+        title: 'IRIS Bot Response',
         text: message.content,
       }).catch(console.error);
     } else {
@@ -67,7 +67,7 @@ export default function ChatMessage({ message }) {
         <div className="flex-1 min-w-0 pt-1 group relative">
           <div className="flex items-center gap-3 mb-3 flex-wrap">
             <span className="text-sm font-black text-ink uppercase tracking-widest">
-              {isUser ? 'You' : 'IRIS'}
+              {isUser ? 'You' : 'IRIS Bot'}
             </span>
             {!isUser && message.injectionStatus && (
               <InjectionBadge status={message.injectionStatus} />

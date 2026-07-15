@@ -19,7 +19,7 @@ const features = [
   },
   {
     title: "Career Sim",
-    desc: "Input your skills and dream job. IRIS generates a complete learning path to get you there.",
+    desc: "Input your skills and dream job. IRIS Bot generates a complete learning path to get you there.",
     icon: RiRocketLine,
     color: "bg-peach",
     tags: ["Skill Gap Analysis", "Salary Estimates"]
@@ -43,7 +43,7 @@ export default function FeaturesSection() {
             More Than Just Chat
           </h2>
           <p className="text-xl text-cream/80 font-medium">
-            IRIS comes with built-in tools designed specifically for students and learners.
+            IRIS Bot comes with built-in tools designed specifically for students and learners.
           </p>
         </div>
 
