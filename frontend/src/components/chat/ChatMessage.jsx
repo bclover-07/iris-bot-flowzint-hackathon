@@ -7,7 +7,7 @@ import 'highlight.js/styles/atom-one-dark.css'; // Premium dark mode syntax high
 import RoutingChip from '@/components/ui/RoutingChip';
 import InjectionBadge from '@/components/ui/InjectionBadge';
 import { RiUser3Line, RiRobot2Line, RiFileCopyLine, RiCheckLine, RiShareForwardLine } from 'react-icons/ri';
-
+import { motion } from 'framer-motion';
 
 export default function ChatMessage({ message }) {
   const isUser = message.role === 'user';
@@ -36,26 +36,31 @@ export default function ChatMessage({ message }) {
   };
 
   // Neo-Brutalist rounded bubble styling
-  let containerClass = 'flex gap-4 p-5 md:p-6 mb-2 animate-slide-up bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
+  let containerClass = 'flex gap-4 p-5 md:p-6 mb-2 bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
   let borderRadiusClass = 'rounded-[2rem] rounded-tl-sm'; // AI messages: square top-left
   let avatarColor = 'bg-mint text-ink';
 
   if (isUser) {
-    containerClass = 'flex gap-4 p-5 md:p-6 mb-2 animate-slide-up bg-[#F5F0FF] border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
+    containerClass = 'flex gap-4 p-5 md:p-6 mb-2 bg-[#F5F0FF] border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
     borderRadiusClass = 'rounded-[2rem] rounded-tr-sm'; // User messages: square top-right
     avatarColor = 'bg-iris-purple text-white';
   } else if (isError || isBlocked) {
-    containerClass = 'flex gap-4 p-5 md:p-6 mb-2 animate-slide-up bg-[#FFF0F0] border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
+    containerClass = 'flex gap-4 p-5 md:p-6 mb-2 bg-[#FFF0F0] border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E]';
     borderRadiusClass = 'rounded-[2rem] rounded-tl-sm';
     avatarColor = 'bg-coral text-ink';
   }
 
   return (
-    <div className={`w-full flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className={`w-full flex ${isUser ? 'justify-end' : 'justify-start'}`}
+    >
       <div className={`${isUser ? 'max-w-[85%]' : 'w-full max-w-full'} min-w-0 ${containerClass} ${borderRadiusClass}`}>
         
         {/* Avatar */}
-        <div className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border-[3px] border-ink rounded-full shadow-[2px_2px_0_#1A1A2E] ${avatarColor}`}>
+        <div className={`w-12 h-12 flex-shrink-0 flex items-center justify-center border-[3px] border-ink rounded-full shadow-[2px_2px_0_#1A1A2E] ${avatarColor} ${message.isStreaming ? 'animate-pulse' : ''}`}>
           {isUser ? <RiUser3Line className="w-6 h-6" /> : <RiRobot2Line className="w-6 h-6" />}
         </div>
 
@@ -122,6 +127,6 @@ export default function ChatMessage({ message }) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

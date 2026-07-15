@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { RiSendPlaneLine, RiLoader4Line, RiErrorWarningLine, RiAttachmentLine, RiFileTextLine } from 'react-icons/ri';
 import { api } from '@/lib/api';
+import { motion } from 'framer-motion';
 
 export default function ChatInput({ onSend, disabled, budgetExceeded }) {
   const [message, setMessage] = useState('');
@@ -168,7 +169,8 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
             rows={1}
             className="w-full bg-cream border-[3px] border-ink rounded-2xl text-ink py-3.5 px-5 outline-none transition-all duration-300 font-medium resize-none min-h-[52px] max-h-[160px] disabled:opacity-50 disabled:cursor-not-allowed text-base shadow-[4px_4px_0_#1A1A2E] focus:border-iris-purple focus:shadow-[4px_4px_0_var(--color-iris-purple)] custom-scrollbar placeholder:text-ink/40"
           />
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={handleSend}
             disabled={(!message.trim() && !attachedFileText) || sending || disabled || budgetExceeded}
             className="bg-iris-purple text-white border-[3px] border-ink rounded-full h-[52px] w-[52px] flex-shrink-0 flex items-center justify-center shadow-[4px_4px_0_#1A1A2E] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#1A1A2E] active:translate-y-[3px] active:shadow-[1px_1px_0_#1A1A2E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -178,7 +180,7 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
             ) : (
               <RiSendPlaneLine className="w-6 h-6 text-white" />
             )}
-          </button>
+          </motion.button>
         </div>
         
         <div className="flex justify-between items-center mt-2 px-1">

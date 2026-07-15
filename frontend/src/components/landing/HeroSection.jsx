@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const DynamicThreeGlobe = dynamic(() => import('./ThreeGlobe'), {
   ssr: false,
@@ -9,17 +9,22 @@ const DynamicThreeGlobe = dynamic(() => import('./ThreeGlobe'), {
 });
 
 export default function HeroSection() {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 100]);
+  const y2 = useTransform(scrollY, [0, 500], [0, -100]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-cream py-16 lg:py-0">
       
-      {/* Playful Floating Shapes (CSS Animations) */}
-      <div className="absolute top-20 right-10 md:right-32 w-24 h-24 rounded-full bg-iris-purple border-3 border-ink animate-float opacity-80" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></div>
-      <div className="absolute bottom-20 left-10 md:left-20 w-16 h-16 bg-sunny border-3 border-ink animate-wiggle opacity-80 rotate-12" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></div>
+      {/* Playful Floating Shapes with Parallax */}
+      <motion.div style={{ y: y1, opacity }} className="absolute top-20 right-10 md:right-32 w-24 h-24 rounded-full bg-iris-purple border-3 border-ink animate-float" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></motion.div>
+      <motion.div style={{ y: y2, opacity }} className="absolute bottom-20 left-10 md:left-20 w-16 h-16 bg-sunny border-3 border-ink animate-wiggle rotate-12" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></motion.div>
       
-      {/* Decorative zig-zag using SVG */}
-      <svg className="absolute top-40 left-10 md:left-40 w-32 h-32 animate-float opacity-50" style={{ animationDelay: '1s' }} viewBox="0 0 100 100">
+      {/* Decorative zig-zag using SVG with Parallax */}
+      <motion.svg style={{ y: y1, opacity, animationDelay: '1s' }} className="absolute top-40 left-10 md:left-40 w-32 h-32 animate-float" viewBox="0 0 100 100">
         <path d="M10 50 L30 20 L50 80 L70 20 L90 50" fill="none" stroke="var(--color-coral)" strokeWidth="6" strokeLinecap="square" strokeLinejoin="miter" />
-      </svg>
+      </motion.svg>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">

@@ -41,39 +41,95 @@ export default function DashboardPage() {
   const handleSend = async (text, options = {}) => {
     const { webSearch = false, socratic = false } = options;
     const newMessage = { role: 'user', content: text, id: Date.now() };
-    setMessages(prev => [...prev, newMessage]);
+    const tempId = Date.now() + 1;
+    setMessages(prev => [...prev, newMessage, {
+      role: 'assistant',
+      content: '',
+      id: tempId,
+      isStreaming: true,
+    }]);
     setIsLoading(true);
 
     try {
-      const res = await api.post('/api/ai/chat', { message: text, sessionId, socraticMode: socratic, webSearchMode: webSearch });
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: res.answer,
-        id: Date.now() + 1,
-        tier: res.routing?.tier,
-        model: res.routing?.modelDisplayName,
-        routing: res.routing,
-        cost: res.cost,
-        injectionStatus: res.injectionStatus
-      }]);
-      fetchStats();
-    } catch (err) {
-      if (err.data?.injectionDetected) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: 'I cannot answer that. Potential prompt injection detected and blocked by PIGuard.',
-          id: Date.now() + 1,
-          isBlocked: true,
-          injectionStatus: 'blocked'
-        }]);
-      } else {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: err.message || 'An error occurred while connecting to IRIS.',
-          id: Date.now() + 1,
-          isError: true,
-        }]);
+      const response = await fetch('/api/ai/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ message: text, sessionId, socraticMode: socratic, webSearchMode: webSearch })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to connect to IRIS stream');
       }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+
+      let accumulatedAnswer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunkText = decoder.decode(value, { stream: true });
+        const lines = chunkText.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (!dataStr.trim()) continue;
+            
+            try {
+              const data = JSON.parse(dataStr);
+
+              if (data.error) {
+                setMessages(prev => prev.map(m => m.id === tempId ? {
+                  ...m,
+                  content: data.message || 'An error occurred.',
+                  isError: true,
+                  isStreaming: false,
+                  injectionStatus: data.injectionStatus || 'clean'
+                } : m));
+                setIsLoading(false);
+                return;
+              }
+
+              if (data.chunk) {
+                accumulatedAnswer += data.chunk;
+                setMessages(prev => prev.map(m => m.id === tempId ? {
+                  ...m,
+                  content: accumulatedAnswer,
+                } : m));
+              }
+
+              if (data.done) {
+                setMessages(prev => prev.map(m => m.id === tempId ? {
+                  ...m,
+                  content: data.answer || accumulatedAnswer,
+                  isStreaming: false,
+                  tier: data.routing?.tier,
+                  model: data.routing?.modelDisplayName,
+                  routing: data.routing,
+                  cost: data.cost,
+                  costSavings: data.costSavings,
+                  injectionStatus: data.injectionStatus
+                } : m));
+                fetchStats();
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data', e);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      setMessages(prev => prev.map(m => m.id === tempId ? {
+        ...m,
+        content: err.message || 'An error occurred while connecting to IRIS.',
+        isError: true,
+        isStreaming: false
+      } : m));
     } finally {
       setIsLoading(false);
     }
