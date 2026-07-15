@@ -119,3 +119,61 @@ export async function callOtari({
     guardrailVerdict,
   };
 }
+
+export async function callOtariStream({
+  model,
+  messages,
+  systemPrompt,
+  guardrailMode = 'block',
+  sessionId,
+}) {
+  const formattedMessages = [];
+  
+  if (systemPrompt) {
+    formattedMessages.push({ role: 'system', content: systemPrompt });
+  }
+  
+  for (const msg of messages) {
+    formattedMessages.push({
+      role: msg.role,
+      content: msg.content,
+    });
+  }
+
+  const requestBody = {
+    model: model,
+    messages: formattedMessages,
+    stream: true,
+    extra_body: {
+      client_name: sessionId || 'default-session',
+      guardrails: [
+        { profile: 'prompt-injection', mode: guardrailMode }
+      ]
+    }
+  };
+
+  if (process.env.OTARI_API_KEY === 'mock-key') {
+    // Return a mock async iterable stream
+    return async function* () {
+      const mockWords = "This is a streaming mock response from IRIS!".split(' ');
+      for (const word of mockWords) {
+        yield { choices: [{ delta: { content: word + ' ' } }] };
+        await new Promise(r => setTimeout(r, 50));
+      }
+    }();
+  }
+
+  try {
+    const stream = await otariClient.chat.completions.create(requestBody);
+    return stream;
+  } catch (err) {
+    if (model !== 'mzai:moonshotai/Kimi-K2.6' && (err.status === 404 || err.status === 502 || err.message?.includes('not found') || err.message?.includes('model'))) {
+      console.warn(`Model ${model} failed, falling back to Kimi K2.6:`, err.message);
+      const fallbackBody = { ...requestBody, model: 'mzai:moonshotai/Kimi-K2.6' };
+      const fallbackStream = await otariClient.chat.completions.create(fallbackBody);
+      return fallbackStream;
+    } else {
+      throw err;
+    }
+  }
+}

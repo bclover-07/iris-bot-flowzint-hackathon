@@ -8,7 +8,7 @@ import {
   recordSpend
 } from '../services/budget.service.js';
 import { searchKnowledgeBase, getCachedResponse, setCachedResponse } from '../services/rag.service.js';
-import { callOtari } from '../services/otari.service.js';
+import { callOtari, callOtariStream } from '../services/otari.service.js';
 import { emitRoutingEvent } from '../services/socket.service.js';
 import { MODELS } from '../config/otari.js';
 import { detectInjection, validateResponse } from '../services/injection.service.js';
@@ -547,3 +547,349 @@ export async function getChatHistory(req, res, next) {
     next(err);
   }
 }
+
+export async function handleAIChatStream(req, res, next) {
+  try {
+    const { message, sessionId, chatHistory = [], socraticMode = false, webSearchMode = false } = req.body;
+    const userId = req.user?._id || req.user?.id;
+
+    if (!message?.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const startTime = Date.now();
+    const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+
+    emitRoutingEvent(trackingId, {
+      type: 'routing_step',
+      step: 1,
+      status: 'analyzing',
+      message: 'Query Received. Analyzing intent...',
+      timestamp: new Date().toISOString()
+    });
+
+    const budgetStatsBefore = await getAllBudgetStats(trackingId);
+
+    // 1. Zero-Cost Semantic Caching / RAG
+    const ragResult = searchKnowledgeBase(message);
+    if (ragResult && ragResult.score > 0.5) {
+      const responsePayload = {
+        answer: ragResult.answer,
+        source: 'knowledge-base',
+        routing: {
+          model: 'Local KB',
+          tier: 'cached',
+          reason: `Answered from local knowledge base (Score: ${Math.round(ragResult.score * 100)}%)`,
+          score: Math.round(ragResult.score * 100),
+          modelDisplayName: 'Local KB',
+          degraded: false,
+          budgetMode: budgetStatsBefore.mode,
+        },
+        cost: {
+          thisCall: 0,
+          thisCallFormatted: '$0.000000',
+          spent: budgetStatsBefore.spent,
+          remaining: budgetStatsBefore.remaining,
+          percentUsed: budgetStatsBefore.percentUsed,
+          mode: budgetStatsBefore.mode,
+        },
+        costSavings: {
+          actualCost: 0,
+          worstCaseCost: 0.006,
+          saved: 0.006,
+          savedPercent: 100,
+        },
+        injectionStatus: 'clean',
+      };
+
+      if (userId && sessionId) {
+        await Session.findOneAndUpdate(
+          { sessionId, userId },
+          {
+            $push: {
+              messages: [
+                { role: 'user', content: message },
+                {
+                  role: 'assistant',
+                  content: ragResult.answer,
+                  routing: responsePayload.routing,
+                  cost: 0,
+                  injectionStatus: 'clean',
+                }
+              ]
+            }
+          },
+          { upsert: true }
+        );
+      }
+
+      emitRoutingEvent(trackingId, {
+        type: 'routing_decision',
+        ...responsePayload.routing,
+        cost: responsePayload.cost,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.write(`data: ${JSON.stringify({ chunk: ragResult.answer })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true, ...responsePayload })}\n\n`);
+      return res.end();
+    }
+
+    // 2. Query Cache
+    const cachedResponse = getCachedResponse(message);
+    if (cachedResponse) {
+      const responsePayload = {
+        ...cachedResponse,
+        source: 'cache',
+        cost: {
+          thisCall: 0,
+          thisCallFormatted: '$0.000000',
+          spent: budgetStatsBefore.spent,
+          remaining: budgetStatsBefore.remaining,
+          percentUsed: budgetStatsBefore.percentUsed,
+          mode: budgetStatsBefore.mode,
+        },
+      };
+
+      emitRoutingEvent(trackingId, {
+        type: 'routing_decision',
+        ...responsePayload.routing,
+        cost: responsePayload.cost,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.write(`data: ${JSON.stringify({ chunk: cachedResponse.answer })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true, ...responsePayload })}\n\n`);
+      return res.end();
+    }
+
+    // 3. Local Injection Detection
+    emitRoutingEvent(trackingId, {
+      type: 'routing_step',
+      step: 2,
+      status: 'analyzing',
+      message: `Estimating Context Window: ~${Math.round(message.length / 4)} tokens. Running PIGuard...`,
+      timestamp: new Date().toISOString()
+    });
+
+    const localInjectionResult = detectInjection(message);
+    if (localInjectionResult.isInjection) {
+      await recordBlockedCall(trackingId);
+      
+      await SecurityLog.create({
+        sessionId,
+        userId,
+        promptSnippet: message.substring(0, 200),
+        threatLevel: 'blocked',
+        detectionLayer: 'local',
+        matchedPatterns: localInjectionResult.matchedPatterns,
+        heuristicFlags: localInjectionResult.heuristicFlags,
+        confidence: localInjectionResult.confidence,
+        action: 'blocked',
+        cost: 0,
+      });
+
+      emitRoutingEvent(trackingId, {
+        type: 'injection_blocked',
+        message: message.substring(0, 50) + '...',
+        timestamp: new Date().toISOString(),
+      });
+
+      res.write(`data: ${JSON.stringify({ error: 'prompt_injection_detected', message: 'Blocked by local security guardrail.', injectionStatus: 'blocked' })}\n\n`);
+      return res.end();
+    }
+
+    // 4. Dynamic Prompt Classification
+    const classification = classifyPrompt(message);
+    const baseModel = MODELS[classification.tier.toUpperCase()];
+
+    // 5. Budget Status & Graceful Degradation
+    const budgetMode = await getBudgetMode(trackingId);
+    if (budgetMode === 'exceeded') {
+      res.write(`data: ${JSON.stringify({ error: 'budget_exceeded', message: 'Budget exceeded.', budgetStats: budgetStatsBefore })}\n\n`);
+      return res.end();
+    }
+
+    let selectedModel = await getDegradedModel(trackingId, baseModel);
+    const degraded = selectedModel !== baseModel;
+    let degradeReason = degraded
+      ? `[BUDGET FALLBACK] ⚠️ ${budgetMode.toUpperCase()} mode! Downgraded from ${MODEL_DISPLAY_NAMES[baseModel]} to Budget ${MODEL_DISPLAY_NAMES[selectedModel]}. Intent: ${classification.reason}`
+      : `[BUDGET HEALTHY] ✅ Sufficient funds left. Safely routed to ${MODEL_DISPLAY_NAMES[selectedModel]}. Intent: ${classification.reason}`;
+
+    if (webSearchMode) {
+      selectedModel = MODELS.SIMPLE;
+      classification.signals.needsWebSearch = true;
+      degradeReason = `[WEB SEARCH ENABLED] 🌐 Forced routing to Mozilla Otari AI (${MODEL_DISPLAY_NAMES[selectedModel]}).`;
+    }
+
+    let injectionStatus = localInjectionResult.threatLevel === 'suspicious' ? 'monitor' : 'clean';
+
+    emitRoutingEvent(trackingId, {
+      type: 'routing_step',
+      step: 4,
+      status: 'routing',
+      message: `Routed to ${MODEL_DISPLAY_NAMES[selectedModel]}. ${degradeReason}`,
+      timestamp: new Date().toISOString()
+    });
+
+    let webSearchResults = '';
+    if (classification.signals.needsWebSearch) {
+      emitRoutingEvent(trackingId, {
+        type: 'routing_step',
+        step: 4,
+        status: 'routing',
+        message: `Browsing the live web for: "${message.substring(0, 30)}..."`,
+        timestamp: new Date().toISOString()
+      });
+      webSearchResults = await searchWeb(message);
+    }
+
+    let baseSystemPrompt = socraticMode 
+      ? `You are IRIS, an intelligent AI Socratic Tutor for students. 
+         NEVER just give the final answer. Ask guiding questions.
+         Current budget mode: ${budgetMode}. Today: ${new Date().toLocaleDateString()}.`
+      : `You are IRIS, an intelligent AI assistant for students. 
+         Be helpful, concise, and educational. 
+         Current budget mode: ${budgetMode}. Today: ${new Date().toLocaleDateString()}.`;
+
+    if (classification.signals.needsWebSearch && webSearchResults) {
+      baseSystemPrompt += `\n\n[LIVE WEB SEARCH RESULTS]:\n${webSearchResults}\n\nUse this data to answer accurately.`;
+    }
+
+    emitRoutingEvent(trackingId, {
+      type: 'routing_step',
+      step: 5,
+      status: 'generating',
+      message: `Streaming response from ${MODEL_DISPLAY_NAMES[selectedModel]}...`,
+      timestamp: new Date().toISOString()
+    });
+
+    // 6. Otari API Stream
+    let stream;
+    try {
+      stream = await callOtariStream({
+        model: selectedModel,
+        messages: [...chatHistory.slice(-6), { role: 'user', content: message }],
+        systemPrompt: baseSystemPrompt,
+        guardrailMode: 'block',
+        sessionId,
+      });
+    } catch (err) {
+      if (err?.status === 403 && webSearchMode) {
+        res.write(`data: ${JSON.stringify({ chunk: "⚠️ **Web Search Failed**: API key permission issue." })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true, answer: "⚠️ **Web Search Failed**: API key permission issue.", cost: { thisCall: 0, ...await getAllBudgetStats(sessionId) } })}\n\n`);
+        return res.end();
+      }
+      if (err?.status === 400 || err?.status === 403 || err?.message?.toLowerCase().includes('injection')) {
+        await recordBlockedCall(sessionId);
+        res.write(`data: ${JSON.stringify({ error: 'prompt_injection_detected', message: 'Blocked by Otari PIGuard.', injectionStatus: 'blocked' })}\n\n`);
+        return res.end();
+      }
+      res.write(`data: ${JSON.stringify({ error: 'server_error', message: 'An error occurred with the AI stream.' })}\n\n`);
+      return res.end();
+    }
+
+    let fullAnswer = '';
+    for await (const chunk of stream) {
+      const text = chunk.choices?.[0]?.delta?.content || '';
+      if (text) {
+        fullAnswer += text;
+        res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+      }
+    }
+
+    // 7. Response Validation (Layer 3)
+    const systemPromptSnippets = ['You are IRIS', 'intelligent AI assistant', 'budget mode'];
+    const responseValidation = validateResponse(fullAnswer, systemPromptSnippets);
+    if (!responseValidation.safe) {
+      injectionStatus = 'blocked';
+      await recordBlockedCall(sessionId);
+      res.write(`data: ${JSON.stringify({ error: 'prompt_injection_detected', message: 'Response blocked due to security leak.', injectionStatus: 'blocked' })}\n\n`);
+      return res.end();
+    }
+
+    if (injectionStatus === 'monitor') {
+      await SecurityLog.create({
+        sessionId, userId, promptSnippet: message.substring(0, 200), threatLevel: 'suspicious', detectionLayer: 'local',
+        matchedPatterns: localInjectionResult.matchedPatterns, confidence: localInjectionResult.confidence, action: 'passed', cost: 0,
+      });
+    }
+
+    // Cost estimation for stream (Otari might not give usage in stream)
+    const estimatedInput = Math.round(message.length / 4) + 100;
+    const estimatedOutput = Math.round(fullAnswer.length / 4);
+    const rates = {
+      'mzai:moonshotai/Kimi-K2.6': { input: 0.15, output: 0.60 },
+      'anthropic:claude-haiku-4-5': { input: 0.25, output: 1.25 },
+      'anthropic:claude-sonnet-4-6': { input: 3.00, output: 15.00 },
+    };
+    const modelRates = rates[selectedModel] || rates['mzai:moonshotai/Kimi-K2.6'];
+    const calculatedCost = (estimatedInput / 1_000_000 * modelRates.input) + (estimatedOutput / 1_000_000 * modelRates.output);
+
+    await recordSpend(trackingId, selectedModel, calculatedCost, {
+      tier: classification.tier,
+      score: classification.score,
+      reason: degradeReason || classification.reason,
+    });
+    const fullStats = await getAllBudgetStats(trackingId);
+
+    const worstCaseCost = (estimatedInput / 1_000_000 * 3.00) + (estimatedOutput / 1_000_000 * 15.00);
+    const saved = Math.max(0, worstCaseCost - calculatedCost);
+    
+    const responsePayload = {
+      answer: fullAnswer,
+      routing: {
+        tier: classification.tier,
+        score: classification.score,
+        reason: degradeReason || classification.reason,
+        model: selectedModel,
+        modelDisplayName: MODEL_DISPLAY_NAMES[selectedModel],
+        degraded,
+        budgetMode,
+        analysisBreakdown: classification.analysis,
+      },
+      cost: {
+        thisCall: calculatedCost,
+        thisCallFormatted: `$${calculatedCost.toFixed(6)}`,
+        spent: fullStats.spent,
+        remaining: fullStats.remaining,
+        percentUsed: fullStats.percentUsed,
+        mode: fullStats.mode,
+      },
+      costSavings: {
+        actualCost: calculatedCost,
+        worstCaseCost,
+        saved,
+        savedPercent: parseFloat((worstCaseCost > 0 ? (saved / worstCaseCost) * 100 : 0).toFixed(1)),
+      },
+      injectionStatus,
+    };
+
+    setCachedResponse(message, { answer: fullAnswer, routing: responsePayload.routing, injectionStatus });
+
+    if (userId && sessionId) {
+      await Session.findOneAndUpdate(
+        { sessionId, userId },
+        { $push: { messages: [
+          { role: 'user', content: message },
+          { role: 'assistant', content: fullAnswer, routing: responsePayload.routing, cost: calculatedCost, costSavings: responsePayload.costSavings, injectionStatus }
+        ]}},
+        { upsert: true }
+      );
+    }
+
+    emitRoutingEvent(trackingId, { type: 'routing_decision', ...responsePayload.routing, cost: responsePayload.cost, costSavings: responsePayload.costSavings, timestamp: new Date().toISOString() });
+
+    res.write(`data: ${JSON.stringify({ done: true, ...responsePayload })}\n\n`);
+    res.end();
+  } catch (err) {
+    console.error('Stream error:', err);
+    res.write(`data: ${JSON.stringify({ error: 'server_error', message: err.message })}\n\n`);
+    res.end();
+  }
+}
+
