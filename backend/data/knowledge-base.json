@@ -1,5 +1,45 @@
 [
   {
+    "question": "What is IRIS Bot?",
+    "answer": "IRIS (Intelligent Routing Assistant) is a cognitive router that dynamically distributes queries across different AI models based on lexical/syntactic complexity, safety, and budget constraints.",
+    "category": "support"
+  },
+  {
+    "question": "How does model routing work in IRIS?",
+    "answer": "IRIS uses lexical analysis, sentence structure complexity, and intent classifiers to route questions to the cheapest model capable of solving them: Kimi K2.6 for basic facts, Claude Haiku 4.5 for explanations, and Claude Sonnet 4.6 for coding or complex logic.",
+    "category": "support"
+  },
+  {
+    "question": "What is budget degradation in IRIS?",
+    "answer": "If your session budget approaches the limit, IRIS automatically downgrades high-tier queries to budget models (e.g. Kimi) to save costs and keep the session active.",
+    "category": "support"
+  },
+  {
+    "question": "How does local security work in IRIS?",
+    "answer": "IRIS uses PIGuard injection blocking at the prompt level, combined with local heuristic regex filters and post-inference system prompt leak checks.",
+    "category": "support"
+  },
+  {
+    "question": "What is Quiz Forge?",
+    "answer": "Quiz Forge is a feature in IRIS that allows students to generate customized multiple-choice tests based on study topics or notes, complete with grading and study tips.",
+    "category": "support"
+  },
+  {
+    "question": "What is Career Sim?",
+    "answer": "Career Sim provides students with salary forecasts and step-by-step career path guides for Indian roles in 2026, using live web search references.",
+    "category": "support"
+  },
+  {
+    "question": "What is the role of sentiment analysis in IRIS?",
+    "answer": "IRIS analyzes user messages locally. If consecutive messages detect frustration, the bot automatically switches from Socratic guidance to direct problem-solving to improve user experience.",
+    "category": "support"
+  },
+  {
+    "question": "How do I reset my session budget?",
+    "answer": "You can reset your session budget in the Budget dashboard settings, allowing you to run higher tier models (Claude Sonnet 4.6) again.",
+    "category": "troubleshooting"
+  },
+  {
     "question": "What is the Pythagorean theorem?",
     "answer": "The Pythagorean theorem states that in a right-angled triangle, the square of the hypotenuse is equal to the sum of the squares of the other two sides ($a^2 + b^2 = c^2$)."
   },

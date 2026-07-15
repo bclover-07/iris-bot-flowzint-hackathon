@@ -38,11 +38,28 @@ export default function AnalyticsDashboard() {
     { name: 'Complex', value: data.complexityBuckets.complex },
   ].filter(d => d.value > 0);
 
-  const historyChartData = data.recentHistory.map((h, i) => ({
-    name: `Q${i + 1}`,
-    cost: h.cost,
-    score: h.score
-  }));
+  const sentimentScoreMap = {
+    VERY_POSITIVE: 4,
+    POSITIVE: 3,
+    NEUTRAL: 2,
+    SLIGHTLY_NEGATIVE: 2,
+    FRUSTRATED: 1,
+    VERY_NEGATIVE: 0,
+  };
+
+  let cumulativeSaved = 0;
+  const historyChartData = [...data.recentHistory].reverse().map((h, i) => {
+    cumulativeSaved += (h.costSavings?.saved || 0);
+    const scoreVal = h.sentiment && h.sentiment.label ? sentimentScoreMap[h.sentiment.label] : 2;
+    return {
+      name: `Q${i + 1}`,
+      cost: h.cost,
+      saved: h.costSavings?.saved || 0,
+      cumulativeSaved: parseFloat(cumulativeSaved.toFixed(5)),
+      sentimentVal: scoreVal,
+      sentimentLabel: h.sentiment ? h.sentiment.label : 'NEUTRAL',
+    };
+  });
 
   const avgCostPerQuery = data.summary.totalCalls > 0 ? data.summary.totalCost / data.summary.totalCalls : 0;
   const remainingQueries = avgCostPerQuery > 0 ? Math.floor(data.budget.remaining / avgCostPerQuery) : '∞';
@@ -202,6 +219,49 @@ export default function AnalyticsDashboard() {
             ) : (
               <div className="text-ink/60 font-bold text-lg border-[3px] border-dashed border-ink/40 rounded-2xl p-8">No model data yet. Start making queries!</div>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Cumulative Savings Timeline */}
+        <div className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6">
+          <h3 className="text-sm font-black uppercase tracking-widest text-ink border-b-4 border-ink pb-2 mb-6 inline-block">Cumulative Cost Savings Timeline</h3>
+          <div className="h-64 mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={historyChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" />
+                <XAxis dataKey="name" stroke="#0f172a" fontSize={12} fontWeight="bold" tickLine={false} axisLine={false} />
+                <YAxis stroke="#0f172a" fontSize={12} fontWeight="bold" tickLine={false} axisLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '3px solid #0f172a', borderRadius: '12px', boxShadow: '4px 4px 0 #1A1A2E' }}
+                  itemStyle={{ color: '#0f172a', fontSize: '14px', fontWeight: 'bold' }}
+                />
+                <Line type="monotone" dataKey="cumulativeSaved" stroke="#10b981" strokeWidth={4} dot={{ r: 5, fill: '#10b981', stroke: '#0f172a', strokeWidth: 3 }} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* User Satisfaction / Sentiment Timeline */}
+        <div className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6">
+          <h3 className="text-sm font-black uppercase tracking-widest text-ink border-b-4 border-ink pb-2 mb-6 inline-block">Student Sentiment & Satisfaction</h3>
+          <div className="h-64 mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={historyChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" />
+                <XAxis dataKey="name" stroke="#0f172a" fontSize={12} fontWeight="bold" tickLine={false} axisLine={false} />
+                <YAxis stroke="#0f172a" fontSize={12} fontWeight="bold" tickLine={false} axisLine={false} domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} tickFormatter={(v) => {
+                  const labels = ['😤 Angry', '😕 Sad', '😐 Neutral', '🙂 Happy', '😊 Superb'];
+                  return labels[v] || '';
+                }} />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '3px solid #0f172a', borderRadius: '12px', boxShadow: '4px 4px 0 #1A1A2E' }}
+                  itemStyle={{ color: '#0f172a', fontSize: '14px', fontWeight: 'bold' }}
+                />
+                <Line type="monotone" dataKey="sentimentVal" stroke="#ec4899" strokeWidth={4} dot={{ r: 5, fill: '#ec4899', stroke: '#0f172a', strokeWidth: 3 }} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>

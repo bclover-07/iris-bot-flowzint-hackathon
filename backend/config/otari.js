@@ -11,12 +11,14 @@ export const MODELS = {
   SIMPLE: 'mzai:moonshotai/Kimi-K2.6',
   MEDIUM: 'anthropic:claude-haiku-4-5',
   COMPLEX: 'anthropic:claude-sonnet-4-6',
+  MULTIMODAL: 'google:gemini-3.5-flash',
 };
 
 export const COST_TABLE = {
   'mzai:moonshotai/Kimi-K2.6':    { input: 0.14,  output: 0.14  },
   'anthropic:claude-haiku-4-5':   { input: 0.25,  output: 1.25  },
   'anthropic:claude-sonnet-4-6':  { input: 3.00,  output: 15.00 },
+  'google:gemini-3.5-flash':      { input: 0.075, output: 0.30  },
 };
 
 export function calculateCost(model, inputTokens, outputTokens) {

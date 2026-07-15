@@ -33,6 +33,7 @@ export async function getAnalyticsDashboard(req, res, next) {
               latencyMs: m.latencyMs,
               routingReason: m.routing.reason,
               analysisBreakdown: m.routing.analysisBreakdown,
+              sentiment: m.sentiment || null,
             };
           });
         richHistory = [...richHistory, ...sessionHistory];

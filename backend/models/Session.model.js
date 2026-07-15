@@ -23,6 +23,12 @@ const messageSchema = new mongoose.Schema({
   },
   latencyMs: Number,
   injectionStatus: { type: String, enum: ['clean', 'blocked', 'monitor'], default: 'clean' },
+  sentiment: {
+    label: String,
+    score: Number,
+    emoji: String,
+    behavior: String,
+  },
   timestamp: { type: Date, default: Date.now },
 });
 

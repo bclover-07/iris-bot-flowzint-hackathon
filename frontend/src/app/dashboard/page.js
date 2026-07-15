@@ -6,6 +6,7 @@ import ChatWindow from '@/components/chat/ChatWindow';
 import ChatInput from '@/components/chat/ChatInput';
 import LiveRoutingFeed from '@/components/dashboard/LiveRoutingFeed';
 import BudgetWarningBanner from '@/components/ui/BudgetWarningBanner';
+import AgentThinkingGraph from '@/components/ui/AgentThinkingGraph';
 import { useSocket } from '@/hooks/useSocket';
 import { useBudget } from '@/hooks/useBudget';
 
@@ -135,6 +136,14 @@ export default function DashboardPage() {
     }
   };
 
+  const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
+  const currentStep = latestStepEvent ? latestStepEvent.step : 0;
+  const graphStatus = latestStepEvent ? latestStepEvent.status : 'idle';
+  const graphLogs = routingEvents
+    .filter(e => e.type === 'routing_step' && e.message)
+    .map(e => e.message)
+    .reverse();
+
   return (
     <div className="h-full min-h-full pb-3 pr-2 flex flex-col lg:flex-row gap-4 lg:gap-6 relative">
       {/* Main Chat Area */}
@@ -169,6 +178,10 @@ export default function DashboardPage() {
               animate={isConnected ? { scale: [1, 1.3, 1] } : {}}
               transition={{ duration: 2, repeat: Infinity }}
             />
+          </div>
+
+          <div className="mb-4 shrink-0">
+            <AgentThinkingGraph currentStep={currentStep} status={graphStatus} logs={graphLogs} />
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">

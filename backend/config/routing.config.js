@@ -35,6 +35,16 @@ export const MODEL_CAPABILITIES = {
     costPerMillionInput: 3.00,
     costPerMillionOutput: 15.00,
   },
+  'google:gemini-3.5-flash': {
+    displayName: 'Gemini 3.5 Flash',
+    tier: 'multimodal',
+    contextWindow: 1048576,
+    strengths: ['image understanding', 'multimodal context', 'search grounding', 'fast reasoning'],
+    maxResponseTokens: 8192,
+    avgLatencyMs: 1200,
+    costPerMillionInput: 0.075,
+    costPerMillionOutput: 0.30,
+  },
 };
 
 export const SCORING_WEIGHTS = {

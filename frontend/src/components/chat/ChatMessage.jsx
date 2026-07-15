@@ -6,6 +6,7 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/atom-one-dark.css'; // Premium dark mode syntax highlighting
 import RoutingChip from '@/components/ui/RoutingChip';
 import InjectionBadge from '@/components/ui/InjectionBadge';
+import SentimentIndicator from '@/components/ui/SentimentIndicator';
 import { RiUser3Line, RiRobot2Line, RiFileCopyLine, RiCheckLine, RiShareForwardLine } from 'react-icons/ri';
 import { motion } from 'framer-motion';
 
@@ -71,6 +72,9 @@ export default function ChatMessage({ message }) {
             </span>
             {!isUser && message.injectionStatus && (
               <InjectionBadge status={message.injectionStatus} />
+            )}
+            {message.sentiment && (
+              <SentimentIndicator sentiment={message.sentiment} />
             )}
           </div>
 
