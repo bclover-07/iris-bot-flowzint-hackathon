@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }) {
           animate={{ y: [0, -15, 0], rotate: [0, 5, -5, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         />
-        <p className="font-mono font-bold animate-pulse text-lg">Loading IRIS...</p>
+        <p className="font-mono font-bold animate-pulse text-lg">Loading IRIS Bot...</p>
       </div>
     );
   }

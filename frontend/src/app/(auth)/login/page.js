@@ -91,7 +91,7 @@ export default function LoginPage() {
           <div className="mb-8 text-center">
             <Link href="/" className="inline-block mb-4">
               <span className="text-3xl font-black text-ink flex justify-center items-center gap-1">
-                IRIS <span className="text-iris-purple">✦</span>
+                IRIS Bot <span className="text-iris-purple">✦</span>
               </span>
             </Link>
             <h1 className="text-3xl font-black text-ink">Welcome back</h1>

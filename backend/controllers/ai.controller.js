@@ -271,14 +271,14 @@ export async function handleAIChat(req, res, next) {
     }
 
     let baseSystemPrompt = socraticMode 
-      ? `You are IRIS, an intelligent AI Socratic Tutor for students. 
+      ? `You are IRIS Bot, an intelligent AI Socratic Tutor for students. 
          Your core directives:
          1. NEVER just give the final answer to a homework, math, or coding problem. Instead, ask guiding questions and guide the student to figure it out themselves.
          2. Protect privacy: Never ask for or reveal Personal Identifiable Information (PII).
          3. Be helpful, concise, and educational.
          Current budget mode: ${budgetMode}. 
          Today's date: ${new Date().toLocaleDateString()}.`
-      : `You are IRIS, an intelligent AI assistant for students. 
+      : `You are IRIS Bot, an intelligent AI assistant for students. 
          Be helpful, concise, and educational. 
          Current budget mode: ${budgetMode}. 
          Today's date: ${new Date().toLocaleDateString()}.`;
@@ -363,7 +363,7 @@ export async function handleAIChat(req, res, next) {
     }
 
     // 7. Response Validation (Layer 3)
-    const systemPromptSnippets = ['You are IRIS', 'intelligent AI assistant', 'budget mode'];
+    const systemPromptSnippets = ['You are IRIS Bot', 'intelligent AI assistant', 'budget mode'];
     const responseValidation = validateResponse(otariResult.answer, systemPromptSnippets);
     if (!responseValidation.safe) {
       injectionStatus = 'blocked';
@@ -749,10 +749,10 @@ export async function handleAIChatStream(req, res, next) {
     }
 
     let baseSystemPrompt = socraticMode 
-      ? `You are IRIS, an intelligent AI Socratic Tutor for students. 
+      ? `You are IRIS Bot, an intelligent AI Socratic Tutor for students. 
          NEVER just give the final answer. Ask guiding questions.
          Current budget mode: ${budgetMode}. Today: ${new Date().toLocaleDateString()}.`
-      : `You are IRIS, an intelligent AI assistant for students. 
+      : `You are IRIS Bot, an intelligent AI assistant for students. 
          Be helpful, concise, and educational. 
          Current budget mode: ${budgetMode}. Today: ${new Date().toLocaleDateString()}.`;
 
@@ -803,7 +803,7 @@ export async function handleAIChatStream(req, res, next) {
     }
 
     // 7. Response Validation (Layer 3)
-    const systemPromptSnippets = ['You are IRIS', 'intelligent AI assistant', 'budget mode'];
+    const systemPromptSnippets = ['You are IRIS Bot', 'intelligent AI assistant', 'budget mode'];
     const responseValidation = validateResponse(fullAnswer, systemPromptSnippets);
     if (!responseValidation.safe) {
       injectionStatus = 'blocked';

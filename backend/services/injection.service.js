@@ -1,5 +1,5 @@
 /**
- * IRIS Prompt Injection Detection Service
+ * IRIS Bot Prompt Injection Detection Service
  * 
  * Three-layer defense-in-depth:
  * Layer 1: Local multi-pattern detector (this service) — $0 cost

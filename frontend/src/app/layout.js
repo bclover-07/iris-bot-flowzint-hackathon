@@ -19,7 +19,7 @@ const caveat = Caveat({
 });
 
 export const metadata = {
-  title: "IRIS | Build With Otari",
+  title: "IRIS Bot | Build With Otari",
   description: "Cost-Aware AI Assistant for Education - Playful Neo-Brutalist Theme",
 };
 

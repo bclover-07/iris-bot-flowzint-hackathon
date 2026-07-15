@@ -61,7 +61,7 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to connect to IRIS stream');
+        throw new Error('Failed to connect to IRIS Bot stream');
       }
 
       const reader = response.body.getReader();
@@ -126,7 +126,7 @@ export default function DashboardPage() {
     } catch (err) {
       setMessages(prev => prev.map(m => m.id === tempId ? {
         ...m,
-        content: err.message || 'An error occurred while connecting to IRIS.',
+        content: err.message || 'An error occurred while connecting to IRIS Bot.',
         isError: true,
         isStreaming: false
       } : m));
@@ -144,7 +144,7 @@ export default function DashboardPage() {
         )}
         <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b-[3px] border-ink bg-cream shrink-0">
            <div className="flex items-center gap-2">
-             <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-ink">IRIS Assistant</h2>
+             <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-ink">IRIS Bot Assistant</h2>
            </div>
          </div>
          <ChatWindow messages={messages} isLoading={isLoading} />

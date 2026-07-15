@@ -1,5 +1,5 @@
 /**
- * IRIS Dynamic Prompt Analyzer — Multi-Signal Classification Engine
+ * IRIS Bot Dynamic Prompt Analyzer — Multi-Signal Classification Engine
  * 
  * Replaces the hardcoded regex classifier with a multi-dimensional analysis system.
  * Considers: vocabulary richness, syntactic complexity, domain detection,

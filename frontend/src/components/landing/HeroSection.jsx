@@ -56,7 +56,7 @@ export default function HeroSection() {
 
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start mb-12">
               <Link href="/chat" className="btn-primary text-lg w-full sm:w-auto">
-                Try IRIS Demo
+                Try IRIS Bot Demo
               </Link>
               <Link href="#features" className="btn-outline text-lg w-full sm:w-auto">
                 See Features

@@ -14,10 +14,10 @@ export async function sendOTPEmail(email, name, otp) {
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: 'IRIS — Verify Your Email',
+    subject: 'IRIS Bot — Verify Your Email',
     html: `
       <div style="font-family: 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0a0a0a; color: #fff; border-radius: 12px; border: 2px solid #7c3aed;">
-        <h1 style="color: #7c3aed; margin-bottom: 8px; font-size: 28px;">IRIS</h1>
+        <h1 style="color: #7c3aed; margin-bottom: 8px; font-size: 28px;">IRIS Bot</h1>
         <p style="color: #a3a3a3; margin-bottom: 24px; font-size: 13px;">Intelligent Routing &amp; Injection-Safe System</p>
         <p style="margin-bottom: 8px;">Hi <strong>${name}</strong>,</p>
         <p style="margin-bottom: 16px;">Your verification code is:</p>
@@ -27,6 +27,6 @@ export async function sendOTPEmail(email, name, otp) {
         <p style="color: #525252; font-size: 11px;">If you didn't request this, ignore this email.</p>
       </div>
     `,
-    text: `Hi ${name},\n\nYour IRIS verification code is: ${otp}\n\nValid for 10 minutes. Do not share this code.`,
+    text: `Hi ${name},\n\nYour IRIS Bot verification code is: ${otp}\n\nValid for 10 minutes. Do not share this code.`,
   });
 }

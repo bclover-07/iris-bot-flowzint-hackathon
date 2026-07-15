@@ -124,7 +124,7 @@ export default function AnalyticsDashboard() {
         <div className="bg-mint border-[4px] border-ink shadow-[4px_4px_0_#1A1A2E] rounded-2xl p-5 flex flex-col gap-2 lg:col-span-2 relative overflow-hidden">
           <div className="flex items-center gap-2 z-10">
             <RiLineChart className="w-5 h-5 text-ink" />
-            <span className="text-xs uppercase font-black tracking-widest text-ink">IRIS Saved You</span>
+            <span className="text-xs uppercase font-black tracking-widest text-ink">IRIS Bot Saved You</span>
           </div>
           <div className="flex items-end gap-3 z-10 mt-1">
             <span className="text-4xl font-black text-ink">${data.summary.savedCost.toFixed(4)}</span>

@@ -56,14 +56,14 @@ export default function RegisterPage() {
           {/* Playful sticker */}
           <div className="absolute -top-5 -right-5 rotate-12">
             <span className="tag-sticker bg-mint border-3 shadow-[2px_2px_0_#1A1A2E] text-lg font-caveat px-4 py-1">
-              Join IRIS! ✦
+              Join IRIS Bot! ✦
             </span>
           </div>
 
           <div className="mb-8 text-center">
             <Link href="/" className="inline-block mb-4">
               <span className="text-3xl font-black text-ink flex justify-center items-center gap-1">
-                IRIS <span className="text-iris-purple">✦</span>
+                IRIS Bot <span className="text-iris-purple">✦</span>
               </span>
             </Link>
             <h1 className="text-3xl font-black text-ink">Create Account</h1>

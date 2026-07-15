@@ -21,7 +21,7 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
       <div className="p-6 border-b-[4px] border-ink flex justify-between items-center bg-cream shrink-0">
         <Link href="/" className="flex flex-col group">
           <span className="text-3xl font-black text-ink flex items-center gap-2 group-hover:scale-105 transition-transform">
-            IRIS <span className="text-iris-purple animate-pulse">✦</span>
+            IRIS Bot <span className="text-iris-purple animate-pulse">✦</span>
           </span>
           <span className="font-caveat text-ink/70 text-xl leading-none -mt-1 ml-1 group-hover:text-iris-purple transition-colors">
             Intelligent Routing

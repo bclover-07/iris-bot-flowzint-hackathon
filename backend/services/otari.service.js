@@ -38,7 +38,7 @@ export async function callOtari({
     if (process.env.OTARI_API_KEY === 'mock-key') {
       response = {
         usage: { prompt_tokens: Math.floor(Math.random() * 50) + 10, completion_tokens: Math.floor(Math.random() * 50) + 20 },
-        choices: [{ message: { content: "This is a mock response from IRIS! Since you're using a mock API key, I'm just playing along." } }],
+        choices: [{ message: { content: "This is a mock response from IRIS Bot! Since you're using a mock API key, I'm just playing along." } }],
         headers: new Headers()
       };
       // Simulate network delay
@@ -155,7 +155,7 @@ export async function callOtariStream({
   if (process.env.OTARI_API_KEY === 'mock-key') {
     // Return a mock async iterable stream
     return async function* () {
-      const mockWords = "This is a streaming mock response from IRIS!".split(' ');
+      const mockWords = "This is a streaming mock response from IRIS Bot!".split(' ');
       for (const word of mockWords) {
         yield { choices: [{ delta: { content: word + ' ' } }] };
         await new Promise(r => setTimeout(r, 50));

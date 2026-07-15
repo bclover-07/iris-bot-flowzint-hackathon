@@ -13,7 +13,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="text-3xl font-black tracking-tighter text-ink flex items-center gap-1">
-              IRIS <span className="text-iris-purple">✦</span>
+              IRIS Bot <span className="text-iris-purple">✦</span>
             </Link>
           </div>
           

@@ -8,7 +8,7 @@ export default function Footer() {
           
           <div>
             <Link href="/" className="text-3xl font-black tracking-tighter text-cream flex items-center gap-1 mb-4">
-              IRIS <span className="text-iris-purple">✦</span>
+              IRIS Bot <span className="text-iris-purple">✦</span>
             </Link>
             <p className="text-cream/70 font-medium mb-6 max-w-xs">
               Intelligent Routing System built for education. Optimizing cost, speed, and safety for every query.
@@ -40,7 +40,7 @@ export default function Footer() {
 
         <div className="border-t-2 border-cream/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-cream/50 text-sm font-medium">
-            © 2026 IRIS Project. HackArena 2.0.
+            © 2026 IRIS Bot Project. HackArena 2.0.
           </p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-mint"></div>

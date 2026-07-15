@@ -1,5 +1,5 @@
 /**
- * IRIS Smart Routing Configuration
+ * IRIS Bot Smart Routing Configuration
  * All routing weights, thresholds, and model capabilities are configurable here.
  * No hardcoded magic numbers in the classifier.
  */
