@@ -39,7 +39,7 @@ export async function analyzeCareer(req, res, next) {
       };
     }
 
-    await recordSpend(sessionId, model, result.cost, { tier: 'complex', reason: 'Career analysis + web search' });
+    await recordSpend(sessionId, model, result.cost, { tier: 'complex', score: 85, reason: 'Career analysis + web search' });
 
     let paths;
     try {

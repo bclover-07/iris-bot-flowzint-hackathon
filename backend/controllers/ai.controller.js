@@ -18,11 +18,15 @@ import { Session } from '../models/Session.model.js';
 
 async function searchWeb(query) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+      },
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     const text = await res.text();
     const snippetRegex = /<a class="result__snippet[^>]*>(.*?)<\/a>/g;
     const snippets = [];
@@ -407,6 +411,7 @@ export async function handleAIChat(req, res, next) {
       score: classification.score,
       reason: degradeReason || classification.reason,
     });
+    const fullStats = await getAllBudgetStats(trackingId);
 
     // 10. Calculate actual savings vs worst case (Sonnet)
     const worstCaseModel = MODELS.COMPLEX;
@@ -432,10 +437,10 @@ export async function handleAIChat(req, res, next) {
       cost: {
         thisCall: otariResult.cost,
         thisCallFormatted: `$${otariResult.cost.toFixed(6)}`,
-        spent: budgetState.spent,
-        remaining: Math.max(0, budgetState.total - budgetState.spent),
-        percentUsed: (budgetState.spent / budgetState.total) * 100,
-        mode: budgetState.mode,
+        spent: fullStats.spent,
+        remaining: fullStats.remaining,
+        percentUsed: fullStats.percentUsed,
+        mode: fullStats.mode,
       },
       costSavings: {
         actualCost: otariResult.cost,

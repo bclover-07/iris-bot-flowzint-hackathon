@@ -10,3 +10,7 @@ dist/
 mobile/
 run_mobile.js
 .git_backup/
+eng.traineddata
+uploads/
+backend/uploads/
+populate_kb.cjs

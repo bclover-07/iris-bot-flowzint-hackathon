@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { RiShieldCheckLine, RiShieldKeyholeLine, RiBugLine, RiEyeLine } from 'react-icons/ri';
+import { motion } from 'framer-motion';
 
 export default function SecurityDashboard() {
   const [data, setData] = useState(null);
@@ -15,7 +16,17 @@ export default function SecurityDashboard() {
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse p-6 bg-brutal-card h-full border-2 border-brutal-border">Loading Security Hub...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-48 skeleton rounded-lg"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-32 skeleton rounded-3xl neo-card"></div>
+          <div className="h-32 skeleton rounded-3xl neo-card"></div>
+          <div className="h-32 skeleton rounded-3xl neo-card"></div>
+        </div>
+        <div className="h-64 skeleton rounded-3xl neo-card"></div>
+      </div>
+    );
   }
 
   if (!data) return <div>Failed to load security analytics.</div>;
@@ -23,79 +34,89 @@ export default function SecurityDashboard() {
   const isShieldActive = data.summary.shieldStatus === 'active_blocking';
 
   return (
-    <div className="space-y-6 animate-slide-up">
+    <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-black uppercase tracking-widest mb-2 flex items-center gap-3">
+        <h1 className="text-3xl font-black mb-2 flex items-center gap-3 text-ink">
           Security Hub
           {isShieldActive ? (
-            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500 text-xs flex items-center gap-1">
-              <RiShieldCheckLine /> SHIELD ACTIVE
-            </span>
+            <motion.span 
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="px-3 py-1 bg-mint text-ink border-[3px] border-ink text-sm flex items-center gap-2 rounded-full font-bold shadow-[3px_3px_0_#1A1A2E]"
+            >
+              <RiShieldCheckLine className="w-4 h-4" /> SHIELD ACTIVE
+            </motion.span>
           ) : (
-            <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 border border-gray-500 text-xs flex items-center gap-1">
-              <RiEyeLine /> MONITORING
+            <span className="px-3 py-1 bg-cream text-ink/70 border-[3px] border-ink/50 text-sm flex items-center gap-2 rounded-full font-bold">
+              <RiEyeLine className="w-4 h-4" /> MONITORING
             </span>
           )}
         </h1>
-        <p className="text-sm text-gray-400 font-mono">Monitoring PIGuard effectiveness against prompt injection attacks.</p>
+        <p className="text-lg text-ink/70 font-medium">Monitoring PIGuard effectiveness against prompt injection attacks.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-brutal-card border-2 border-brutal-border p-4">
-          <div className="flex items-center gap-2 text-red-400 mb-2">
-            <RiShieldKeyholeLine className="w-5 h-5" />
-            <span className="text-xs uppercase font-bold">Total Blocked Attacks</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="neo-card card-coral p-6">
+          <div className="flex items-center gap-3 text-coral mb-4">
+            <div className="p-2 bg-coral/20 rounded-full border-2 border-coral">
+              <RiShieldKeyholeLine className="w-6 h-6" />
+            </div>
+            <span className="text-sm uppercase font-black text-ink">Total Blocked Attacks</span>
           </div>
-          <span className="text-4xl font-black text-red-500">{data.summary.totalBlocked}</span>
+          <span className="text-5xl font-black text-ink">{data.summary.totalBlocked}</span>
         </div>
         
-        <div className="bg-brutal-card border-2 border-brutal-border p-4">
-          <div className="flex items-center gap-2 text-yellow-400 mb-2">
-            <RiBugLine className="w-5 h-5" />
-            <span className="text-xs uppercase font-bold">Suspicious Prompts</span>
+        <div className="neo-card card-sunny p-6">
+          <div className="flex items-center gap-3 text-sunny mb-4">
+            <div className="p-2 bg-sunny/20 rounded-full border-2 border-sunny text-ink">
+              <RiBugLine className="w-6 h-6" />
+            </div>
+            <span className="text-sm uppercase font-black text-ink">Suspicious Prompts</span>
           </div>
-          <span className="text-4xl font-black text-yellow-500">{data.summary.totalSuspicious}</span>
+          <span className="text-5xl font-black text-ink">{data.summary.totalSuspicious}</span>
         </div>
 
-        <div className="bg-brutal-card border-2 border-brutal-border p-4">
-          <div className="flex items-center gap-2 text-emerald-400 mb-2">
-            <RiShieldCheckLine className="w-5 h-5" />
-            <span className="text-xs uppercase font-bold">Money Saved by Guard</span>
+        <div className="neo-card card-mint p-6">
+          <div className="flex items-center gap-3 text-mint mb-4">
+            <div className="p-2 bg-mint/20 rounded-full border-2 border-mint text-ink">
+              <RiShieldCheckLine className="w-6 h-6" />
+            </div>
+            <span className="text-sm uppercase font-black text-ink">Money Saved by Guard</span>
           </div>
-          <span className="text-4xl font-black text-emerald-500">${data.summary.savedBySecurity.toFixed(4)}</span>
+          <span className="text-5xl font-black text-ink">${data.summary.savedBySecurity.toFixed(4)}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-brutal-card border-2 border-brutal-border p-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 border-b border-brutal-border pb-2">Defense Layers</h3>
-            <div className="space-y-3 font-mono text-xs">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 space-y-6">
+          <div className="neo-card p-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-ink/50 mb-4 border-b-[3px] border-ink/10 pb-3">Defense Layers</h3>
+            <div className="space-y-4 font-mono text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Layer 1: Local Pre-filter</span>
-                <span className="font-bold">{data.layerBreakdown.local} blocked</span>
+                <span className="text-ink/80 font-bold">Layer 1: Local Pre-filter</span>
+                <span className="font-black text-coral">{data.layerBreakdown.local} blocked</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Layer 2: Otari PIGuard</span>
-                <span className="font-bold">{data.layerBreakdown.piguard} blocked</span>
+                <span className="text-ink/80 font-bold">Layer 2: Otari PIGuard</span>
+                <span className="font-black text-coral">{data.layerBreakdown.piguard} blocked</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Layer 3: Response Validator</span>
-                <span className="font-bold">{data.layerBreakdown.response} blocked</span>
+                <span className="text-ink/80 font-bold">Layer 3: Response Validator</span>
+                <span className="font-black text-coral">{data.layerBreakdown.response} blocked</span>
               </div>
             </div>
           </div>
           
-          <div className="bg-brutal-card border-2 border-brutal-border p-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 border-b border-brutal-border pb-2">Attack Categories</h3>
-            <div className="space-y-3 font-mono text-xs">
+          <div className="neo-card p-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-ink/50 mb-4 border-b-[3px] border-ink/10 pb-3">Attack Categories</h3>
+            <div className="space-y-4 font-mono text-sm">
               {Object.entries(data.categoryBreakdown).length === 0 ? (
-                <div className="text-gray-500">No attacks recorded yet.</div>
+                <div className="text-ink/50 font-bold">No attacks recorded yet.</div>
               ) : (
                 Object.entries(data.categoryBreakdown).map(([category, count]) => (
                   <div key={category} className="flex justify-between items-center">
-                    <span className="text-gray-300 truncate pr-2">{category}</span>
-                    <span className="font-bold shrink-0">{count}</span>
+                    <span className="text-ink/80 font-bold truncate pr-3">{category}</span>
+                    <span className="font-black bg-cream px-2 py-1 border-2 border-ink rounded-lg">{count}</span>
                   </div>
                 ))
               )}
@@ -103,31 +124,31 @@ export default function SecurityDashboard() {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-brutal-card border-2 border-brutal-border p-4 flex flex-col h-[500px]">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 border-b border-brutal-border pb-2 shrink-0">Live Threat Log</h3>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        <div className="lg:col-span-2 neo-card p-6 flex flex-col h-[600px]">
+          <h3 className="text-sm font-black uppercase tracking-widest text-ink/50 mb-6 border-b-[3px] border-ink/10 pb-3 shrink-0">Live Threat Log</h3>
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
             {data.recentEvents.length === 0 ? (
-              <div className="text-gray-500 font-mono text-xs text-center mt-10 border-2 border-dashed border-brutal-border p-6">
+              <div className="text-ink/50 font-black text-sm text-center mt-10 border-[3px] border-dashed border-ink/20 p-8 rounded-2xl bg-cream">
                 All systems clear. No security events recorded.
               </div>
             ) : (
               data.recentEvents.map((event, i) => (
-                <div key={i} className={`p-3 border text-xs font-mono ${event.threatLevel === 'blocked' ? 'bg-red-500/10 border-red-500/50' : 'bg-yellow-500/10 border-yellow-500/50'}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-1.5 py-0.5 font-bold uppercase text-[9px] ${event.threatLevel === 'blocked' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-black'}`}>
+                <div key={i} className={`p-4 border-[3px] border-ink rounded-xl font-mono text-sm ${event.threatLevel === 'blocked' ? 'bg-coral/10' : 'bg-sunny/10'}`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-1 font-black uppercase text-[10px] border-2 border-ink rounded-md shadow-[2px_2px_0_#1A1A2E] ${event.threatLevel === 'blocked' ? 'bg-coral text-white' : 'bg-sunny text-ink'}`}>
                         {event.threatLevel}
                       </span>
-                      <span className="text-gray-400">{new Date(event.timestamp).toLocaleString()}</span>
+                      <span className="text-ink/60 font-bold text-xs">{new Date(event.timestamp).toLocaleString()}</span>
                     </div>
-                    <span className="text-gray-500 uppercase text-[9px]">Layer: {event.detectionLayer}</span>
+                    <span className="text-ink/50 font-black uppercase text-[10px] bg-white px-2 py-1 border-2 border-ink/20 rounded-md">Layer: {event.detectionLayer}</span>
                   </div>
-                  <div className="bg-brutal-black p-2 border border-black text-gray-300 mb-2 truncate">
+                  <div className="bg-white p-3 border-[3px] border-ink rounded-lg text-ink/80 mb-3 truncate font-bold text-xs">
                     {event.promptSnippet}
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {event.matchedPatterns.map((p, j) => (
-                      <span key={j} className="text-[9px] bg-brutal-black border border-brutal-border px-1 text-gray-400">
+                      <span key={j} className="text-[10px] bg-white border-2 border-ink rounded-full px-2 py-0.5 text-ink/70 font-bold">
                         {p.label} ({(p.severity * 100).toFixed(0)}%)
                       </span>
                     ))}

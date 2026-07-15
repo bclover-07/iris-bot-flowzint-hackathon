@@ -50,8 +50,7 @@ export async function getAnalyticsDashboard(req, res, next) {
     richHistory.forEach(h => {
       modelDistribution[h.model] = (modelDistribution[h.model] || 0) + 1;
       totalCost += h.cost || 0;
-      // We could use h.costSavings.worstCaseCost here if we want exactness, but keeping original logic:
-      worstCaseCost += (250 / 1000000 * 3.00) + (300 / 1000000 * 15.00); 
+      worstCaseCost += h.costSavings?.worstCaseCost || ((250 / 1000000 * 3.00) + (300 / 1000000 * 15.00)); 
     });
 
     // 3. Complexity Distribution
