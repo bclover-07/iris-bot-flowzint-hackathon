@@ -32,14 +32,14 @@ export default function HeroSection() {
           >
             <div className="inline-block mb-6 rotate-[-2deg]">
               <div className="tag-sticker bg-sunny text-ink border-3">
-                Powered by Mozilla Otari ⚡
+                Built for FlowZint AI Hackathon 2026 🏆
               </div>
             </div>
 
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 text-ink leading-[1.1]">
-              AI That Thinks <br className="hidden sm:block" />
+              Cost-Aware AI <br className="hidden sm:block" />
               <span className="relative inline-block mt-2">
-                <span className="relative z-10 gradient-text">About Your Budget.</span>
+                <span className="relative z-10 gradient-text">For Education.</span>
                 {/* Highlight underline */}
                 <span className="absolute bottom-1 left-0 w-full h-4 bg-sunny -z-10 -rotate-1"></span>
               </span>
@@ -50,11 +50,11 @@ export default function HeroSection() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start mb-12">
-              <Link href="/register" className="btn-primary text-lg w-full sm:w-auto">
-                Start Learning Free
+              <Link href="/chat" className="btn-primary text-lg w-full sm:w-auto">
+                Try IRIS Demo
               </Link>
-              <Link href="#how-it-works" className="btn-outline text-lg w-full sm:w-auto">
-                See How It Works
+              <Link href="#features" className="btn-outline text-lg w-full sm:w-auto">
+                See Features
               </Link>
             </div>
 

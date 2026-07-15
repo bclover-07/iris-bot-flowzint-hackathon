@@ -198,5 +198,169 @@
   {
     "question": "What is a microbiome?",
     "answer": "A microbiome is the community of microorganisms (such as fungi, bacteria, and viruses) that exists in a particular environment, such as the human gut."
+  },
+  {
+    "question": "What is photosynthesis?",
+    "answer": "Photosynthesis is the process by which green plants synthesize foods from carbon dioxide and water."
+  },
+  {
+    "question": "What is the capital of France?",
+    "answer": "Paris."
+  },
+  {
+    "question": "Who wrote Romeo and Juliet?",
+    "answer": "William Shakespeare."
+  },
+  {
+    "question": "What is the powerhouse of the cell?",
+    "answer": "Mitochondria."
+  },
+  {
+    "question": "What is the speed of light?",
+    "answer": "299,792 km/s."
+  },
+  {
+    "question": "What is Newtons first law?",
+    "answer": "An object remains at rest or in uniform motion unless acted upon by a force."
+  },
+  {
+    "question": "What is H2O?",
+    "answer": "Water."
+  },
+  {
+    "question": "What is the largest planet?",
+    "answer": "Jupiter."
+  },
+  {
+    "question": "Who discovered gravity?",
+    "answer": "Isaac Newton."
+  },
+  {
+    "question": "What is a noun?",
+    "answer": "A person, place, thing, or idea."
+  },
+  {
+    "question": "What is a verb?",
+    "answer": "An action."
+  },
+  {
+    "question": "What is an adjective?",
+    "answer": "A descriptive word."
+  },
+  {
+    "question": "What is a prime number?",
+    "answer": "A number divisible only by 1 and itself."
+  },
+  {
+    "question": "What is the area of a circle?",
+    "answer": "pi * r^2."
+  },
+  {
+    "question": "What is the symbol for gold?",
+    "answer": "Au."
+  },
+  {
+    "question": "What is the boiling point of water?",
+    "answer": "100C."
+  },
+  {
+    "question": "What is pi?",
+    "answer": "3.14159."
+  },
+  {
+    "question": "Who painted the Mona Lisa?",
+    "answer": "Leonardo da Vinci."
+  },
+  {
+    "question": "What is the freezing point of water?",
+    "answer": "0C."
+  },
+  {
+    "question": "What is the longest river?",
+    "answer": "Nile."
+  },
+  {
+    "question": "What is the tallest mountain?",
+    "answer": "Mount Everest."
+  },
+  {
+    "question": "What is the atomic number of oxygen?",
+    "answer": "8."
+  },
+  {
+    "question": "What is democracy?",
+    "answer": "Rule by the people."
+  },
+  {
+    "question": "What is gravity?",
+    "answer": "Force of attraction."
+  },
+  {
+    "question": "What is DNA?",
+    "answer": "Genetic material."
+  },
+  {
+    "question": "What is the symbol for Iron?",
+    "answer": "Fe."
+  },
+  {
+    "question": "What is a molecule?",
+    "answer": "Group of atoms."
+  },
+  {
+    "question": "What is an ecosystem?",
+    "answer": "Biological community."
+  },
+  {
+    "question": "What is a black hole?",
+    "answer": "Region of strong gravity."
+  },
+  {
+    "question": "Who is Albert Einstein?",
+    "answer": "Theoretical physicist."
+  },
+  {
+    "question": "What is a light year?",
+    "answer": "Distance light travels in a year."
+  },
+  {
+    "question": "What is the greenhouse effect?",
+    "answer": "Trapping of suns warmth."
+  },
+  {
+    "question": "What is global warming?",
+    "answer": "Heating of Earth."
+  },
+  {
+    "question": "What is the periodic table?",
+    "answer": "Arrangement of elements."
+  },
+  {
+    "question": "What is a proton?",
+    "answer": "Positively charged particle."
+  },
+  {
+    "question": "What is a neutron?",
+    "answer": "Neutral particle."
+  },
+  {
+    "question": "What is an electron?",
+    "answer": "Negatively charged particle."
+  },
+  {
+    "question": "What is an isotope?",
+    "answer": "Variant of an element."
+  },
+  {
+    "question": "What is a covalent bond?",
+    "answer": "Sharing of electrons."
+  },
+  {
+    "question": "What is an ionic bond?",
+    "answer": "Transfer of electrons."
+  },
+  {
+    "question": "What is a pH scale?",
+    "answer": "Measure of acidity."
   }
 ]
