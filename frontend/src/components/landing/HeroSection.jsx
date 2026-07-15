@@ -18,8 +18,8 @@ export default function HeroSection() {
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-cream py-16 lg:py-0">
       
       {/* Playful Floating Shapes with Parallax */}
-      <motion.div style={{ y: y1, opacity }} className="absolute top-20 right-10 md:right-32 w-24 h-24 rounded-full bg-iris-purple border-3 border-ink animate-float" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></motion.div>
-      <motion.div style={{ y: y2, opacity }} className="absolute bottom-20 left-10 md:left-20 w-16 h-16 bg-sunny border-3 border-ink animate-wiggle rotate-12" style={{ boxShadow: '4px 4px 0 #1A1A2E' }}></motion.div>
+      <motion.div style={{ y: y1, opacity, boxShadow: '4px 4px 0 #1A1A2E' }} className="absolute top-20 right-10 md:right-32 w-24 h-24 rounded-full bg-iris-purple border-3 border-ink animate-float"></motion.div>
+      <motion.div style={{ y: y2, opacity, boxShadow: '4px 4px 0 #1A1A2E' }} className="absolute bottom-20 left-10 md:left-20 w-16 h-16 bg-sunny border-3 border-ink animate-wiggle rotate-12"></motion.div>
       
       {/* Decorative zig-zag using SVG with Parallax */}
       <motion.svg style={{ y: y1, opacity, animationDelay: '1s' }} className="absolute top-40 left-10 md:left-40 w-32 h-32 animate-float" viewBox="0 0 100 100">
