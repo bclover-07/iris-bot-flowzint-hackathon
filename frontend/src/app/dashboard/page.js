@@ -52,7 +52,8 @@ export default function DashboardPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/ai/chat/stream', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/ai/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

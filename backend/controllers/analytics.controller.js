@@ -1,13 +1,15 @@
 import { Session } from '../models/Session.model.js';
 import { SecurityLog } from '../models/SecurityLog.model.js';
 import { BudgetTracker } from '../models/BudgetTracker.model.js';
+import { getAllBudgetStats } from '../services/budget.service.js';
 
 export async function getAnalyticsDashboard(req, res, next) {
   try {
     const userId = req.user.id || req.user._id;
+    const trackingId = userId ? userId.toString() : (req.query.sessionId || 'demo-session-id');
 
     // 1. Get Budget Tracker for the user
-    const tracker = await BudgetTracker.findOne({ sessionId: req.query.sessionId || 'demo-session-id' });
+    const budgetStats = await getAllBudgetStats(trackingId);
     
     // Fetch rich history from ALL Session models for this user
     const allSessions = await Session.find({ userId: userId }).sort({ createdAt: -1 });
@@ -68,13 +70,7 @@ export async function getAnalyticsDashboard(req, res, next) {
         savedCost: parseFloat((worstCaseCost - totalCost).toFixed(6)),
         savingsPercent: worstCaseCost > 0 ? parseFloat((((worstCaseCost - totalCost) / worstCaseCost) * 100).toFixed(1)) : 0,
       },
-      budget: tracker ? {
-        total: tracker.total,
-        spent: tracker.spent,
-        remaining: Math.max(0, tracker.total - tracker.spent),
-        percentUsed: (tracker.spent / tracker.total) * 100,
-        mode: tracker.mode
-      } : { total: 2.0, spent: 0, remaining: 2.0, percentUsed: 0, mode: 'normal' },
+      budget: budgetStats,
       modelDistribution,
       complexityBuckets,
       recentHistory: richHistory, // Send the full rich history

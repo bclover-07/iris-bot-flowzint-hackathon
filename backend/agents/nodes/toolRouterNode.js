@@ -106,7 +106,12 @@ export async function toolRouterNode(state) {
       message: `Browsing live web for current references...`,
       timestamp: new Date().toISOString()
     });
-    webSearchResults = await searchGrounded(message);
+    try {
+      webSearchResults = await searchGrounded(message);
+    } catch (searchErr) {
+      console.warn('[toolRouterNode] Gemini Grounded Search failed, falling back to offline knowledge base:', searchErr.message);
+      webSearchResults = '[SYSTEM: Live web search is temporarily unavailable due to API key restrictions. Please answer the user\'s query based on your existing knowledge base.]';
+    }
   }
 
   emitRoutingEvent(trackingId, {

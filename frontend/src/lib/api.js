@@ -2,10 +2,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
 
 async function request(path, options = {}) {
   const url = `${API_URL}${path}`;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const config = {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
