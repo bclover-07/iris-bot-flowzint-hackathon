@@ -36,11 +36,15 @@ export default function DashboardPage() {
 
   // Personalized session for budget/routing isolation
   const sessionId = user?._id || user?.id || 'demo-session-id';
-  const { socket, routingEvents, isConnected } = useSocket(sessionId);
+  const { socket, routingEvents, isConnected, clearEvents } = useSocket(sessionId);
   const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
 
   const handleSend = async (text, options = {}) => {
     const { webSearch = false, socratic = false } = options;
+    
+    // Clear stale routing events for new query
+    if (clearEvents) clearEvents();
+
     const newMessage = { role: 'user', content: text, id: Date.now() };
     const tempId = Date.now() + 1;
     setMessages(prev => [...prev, newMessage, {

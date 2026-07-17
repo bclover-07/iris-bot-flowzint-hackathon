@@ -51,6 +51,10 @@ export default function ChatMessage({ message }) {
     avatarColor = 'bg-coral text-ink';
   }
 
+  if (!isUser && !message.content && !isError && !isBlocked) {
+    return null;
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20, scale: 0.95 }}

@@ -3,12 +3,14 @@ import { getBudgetMode, getDegradedModel, getAllBudgetStats } from '../../servic
 import { MODELS } from '../../config/otari.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
 import { searchGrounded } from '../../services/gemini.service.js';
+import { isModelDisabled } from '../../services/otari.service.js';
+
 
 const MODEL_DISPLAY_NAMES = {
   'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
   'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
   'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'google:gemini-3.5-flash': 'Gemini 3.5 Flash',
+  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
 };
 
 async function searchWeb(query) {
@@ -113,6 +115,14 @@ export async function toolRouterNode(state) {
       webSearchResults = '[SYSTEM: Live web search is temporarily unavailable due to API key restrictions. Please answer the user\'s query based on your existing knowledge base.]';
     }
   }
+
+  // --- CIRCUIT BREAKER OVERRIDE ---
+  if (isModelDisabled(selectedModel)) {
+    const oldModelName = MODEL_DISPLAY_NAMES[selectedModel] || selectedModel;
+    selectedModel = 'mzai:moonshotai/Kimi-K2.6';
+    routingReason = `[Circuit Breaker] Routed to Kimi K2.6 because ${oldModelName} is offline/unsupported on this API key. ${routingReason}`;
+  }
+
 
   emitRoutingEvent(trackingId, {
     type: 'routing_step',

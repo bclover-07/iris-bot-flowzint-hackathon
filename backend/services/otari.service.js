@@ -1,5 +1,12 @@
 import { otariClient, calculateCost } from '../config/otari.js';
 
+// Circuit breaker memory cache to track unsupported/failing models on the active API key
+const disabledModels = new Set();
+
+export function isModelDisabled(model) {
+  return disabledModels.has(model);
+}
+
 export async function callOtari({
   model,
   messages,
@@ -8,6 +15,12 @@ export async function callOtari({
   useWebSearch = false,
   sessionId,
 }) {
+  // Apply circuit breaker override immediately if the model is known to fail
+  if (disabledModels.has(model)) {
+    console.log(`[Circuit Breaker] Bypassing known failing model ${model} -> mzai:moonshotai/Kimi-K2.6`);
+    model = 'mzai:moonshotai/Kimi-K2.6';
+  }
+
   const formattedMessages = [];
   
   if (systemPrompt) {
@@ -31,7 +44,6 @@ export async function callOtari({
       ]
     }
   };
-
 
   let response;
   try {
@@ -60,7 +72,8 @@ export async function callOtari({
     // Fallback logic: If the selected model (e.g., Claude) is not available (404/502),
     // we gracefully fall back to Kimi K2.6 so the application never crashes.
     if (model !== 'mzai:moonshotai/Kimi-K2.6' && (err.status === 404 || err.status === 502 || err.message?.includes('not found') || err.message?.includes('model'))) {
-      console.warn(`Model ${model} failed, falling back to Kimi K2.6:`, err.message);
+      console.warn(`Model ${model} failed, adding to disabled models list and falling back to Kimi K2.6:`, err.message);
+      disabledModels.add(model);
       const fallbackBody = {
         ...requestBody,
         model: 'mzai:moonshotai/Kimi-K2.6',
@@ -127,6 +140,12 @@ export async function callOtariStream({
   guardrailMode = 'block',
   sessionId,
 }) {
+  // Apply circuit breaker override immediately if the model is known to fail
+  if (disabledModels.has(model)) {
+    console.log(`[Circuit Breaker Stream] Bypassing known failing model ${model} -> mzai:moonshotai/Kimi-K2.6`);
+    model = 'mzai:moonshotai/Kimi-K2.6';
+  }
+
   const formattedMessages = [];
   
   if (systemPrompt) {
@@ -169,7 +188,8 @@ export async function callOtariStream({
     return stream;
   } catch (err) {
     if (model !== 'mzai:moonshotai/Kimi-K2.6' && (err.status === 404 || err.status === 502 || err.message?.includes('not found') || err.message?.includes('model'))) {
-      console.warn(`Model ${model} failed, falling back to Kimi K2.6:`, err.message);
+      console.warn(`Model ${model} failed, adding to disabled models list and falling back to Kimi K2.6:`, err.message);
+      disabledModels.add(model);
       const fallbackBody = { ...requestBody, model: 'mzai:moonshotai/Kimi-K2.6' };
       const fallbackStream = await otariClient.chat.completions.create(fallbackBody);
       return fallbackStream;
