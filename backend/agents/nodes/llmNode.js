@@ -1,5 +1,6 @@
-import { callOtari } from '../../services/otari.service.js';
+import { callOtari, callOtariStream } from '../../services/otari.service.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
+import { calculateCost } from '../../config/otari.js';
 
 const MODEL_DISPLAY_NAMES = {
   'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
@@ -12,7 +13,7 @@ const MODEL_DISPLAY_NAMES = {
  * Node that runs the LLM call using the selected model, system prompt,
  * and conversational parameters.
  */
-export async function llmNode(state) {
+export async function llmNode(state, config = {}) {
   const { 
     message, 
     sessionId, 
@@ -78,39 +79,101 @@ Today's date: ${new Date().toLocaleDateString()}.`;
     }
   }
 
+  const writer = config?.configurable?.writer;
   let otariResult;
-  try {
-    otariResult = await callOtari({
-      model: selectedModel,
-      messages: [
-        ...chatHistory.slice(-6),
-        { role: 'user', content: message },
-      ],
-      systemPrompt: finalSystemPromptSnippets.join('\n'),
-      guardrailMode: 'block',
-      useWebSearch: webSearchMode,
-      sessionId,
-    });
-  } catch (err) {
-    console.error('[Agent LLM Node] Otari API Error:', err.message);
-    
-    // Check for Gateway Block
-    if (err?.status === 400 || err?.status === 403 || err?.message?.toLowerCase().includes('injection') || err?.message?.toLowerCase().includes('guardrail')) {
-      return {
-        injectionStatus: 'blocked',
-        answer: 'Your message was flagged as a potential prompt injection attempt and blocked by Mozilla Otari PIGuard.',
-        trace: ['llmNode']
+
+  if (writer) {
+    try {
+      const stream = await callOtariStream({
+        model: selectedModel,
+        messages: [
+          ...chatHistory.slice(-6),
+          { role: 'user', content: message },
+        ],
+        systemPrompt: finalSystemPromptSnippets.join('\n'),
+        guardrailMode: 'block',
+        sessionId,
+      });
+
+      let fullAnswer = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      for await (const chunk of stream) {
+        const content = chunk.choices?.[0]?.delta?.content || '';
+        if (content) {
+          fullAnswer += content;
+          writer(content);
+        }
+        if (chunk.usage) {
+          inputTokens = chunk.usage.prompt_tokens || inputTokens;
+          outputTokens = chunk.usage.completion_tokens || outputTokens;
+        }
+      }
+
+      if (inputTokens === 0) {
+        inputTokens = Math.round((message.length + finalSystemPromptSnippets.join('\n').length) / 4);
+        outputTokens = Math.round(fullAnswer.length / 4);
+      }
+      const cost = calculateCost(selectedModel, inputTokens, outputTokens);
+
+      otariResult = {
+        answer: fullAnswer,
+        inputTokens,
+        outputTokens,
+        cost,
+      };
+    } catch (err) {
+      console.error('[Agent LLM Node] Otari Streaming API Error:', err.message);
+      if (err?.status === 400 || err?.status === 403 || err?.message?.toLowerCase().includes('injection') || err?.message?.toLowerCase().includes('guardrail')) {
+        return {
+          injectionStatus: 'blocked',
+          answer: 'Your message was flagged as a potential prompt injection attempt and blocked by Mozilla Otari PIGuard.',
+          trace: ['llmNode']
+        };
+      }
+      otariResult = {
+        answer: "I'm having trouble connecting to my cognitive routing servers. Let me assist you from my offline fallback model. " + 
+                "Regarding your query: " + message,
+        cost: 0.0001,
+        inputTokens: 50,
+        outputTokens: 50,
       };
     }
-    
-    // Normal fallback
-    otariResult = {
-      answer: "I'm having trouble connecting to my cognitive routing servers. Let me assist you from my offline fallback model. " + 
-              "Regarding your query: " + message,
-      cost: 0.0001,
-      inputTokens: 50,
-      outputTokens: 50,
-    };
+  } else {
+    try {
+      otariResult = await callOtari({
+        model: selectedModel,
+        messages: [
+          ...chatHistory.slice(-6),
+          { role: 'user', content: message },
+        ],
+        systemPrompt: finalSystemPromptSnippets.join('\n'),
+        guardrailMode: 'block',
+        useWebSearch: webSearchMode,
+        sessionId,
+      });
+    } catch (err) {
+      console.error('[Agent LLM Node] Otari API Error:', err.message);
+      
+      // Check for Gateway Block
+      if (err?.status === 400 || err?.status === 403 || err?.message?.toLowerCase().includes('injection') || err?.message?.toLowerCase().includes('guardrail')) {
+        return {
+          injectionStatus: 'blocked',
+          answer: 'Your message was flagged as a potential prompt injection attempt and blocked by Mozilla Otari PIGuard.',
+          trace: ['llmNode']
+        };
+      }
+      
+      // Normal fallback
+      otariResult = {
+        answer: "I'm having trouble connecting to my cognitive routing servers. Let me assist you from my offline fallback model. " + 
+                "Regarding your query: " + message,
+        cost: 0.0001,
+        inputTokens: 50,
+        outputTokens: 50,
+      };
+    }
   }
 
   return {
@@ -123,3 +186,4 @@ Today's date: ${new Date().toLocaleDateString()}.`;
     trace: ['llmNode']
   };
 }
+

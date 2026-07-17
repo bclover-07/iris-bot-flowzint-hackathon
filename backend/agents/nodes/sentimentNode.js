@@ -1,4 +1,4 @@
-import { analyzeSentiment } from '../../services/sentiment.service.js';
+import { analyzeSentiment, analyzeSentimentTrend } from '../../services/sentiment.service.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
 
 /**
@@ -6,7 +6,7 @@ import { emitRoutingEvent } from '../../services/socket.service.js';
  * Adapts agent behavior parameters based on user frustration level.
  */
 export async function sentimentNode(state) {
-  const { message, sessionId, userId } = state;
+  const { message, sessionId, userId, chatHistory = [] } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
 
   emitRoutingEvent(trackingId, {
@@ -19,15 +19,37 @@ export async function sentimentNode(state) {
 
   const sentiment = await analyzeSentiment(message);
   
+  // Extract sentiment labels from user message history
+  const recentUserSentiments = chatHistory
+    .filter(msg => msg.role === 'user' && msg.sentiment)
+    .map(msg => msg.sentiment);
+  
+  recentUserSentiments.push(sentiment);
+  const trendResult = analyzeSentimentTrend(recentUserSentiments);
+
+  const finalSentiment = {
+    ...sentiment,
+    trend: trendResult.trend,
+    shouldEscalate: trendResult.shouldEscalate,
+    adaptations: trendResult.adaptations || [],
+  };
+
   // Also emit sentiment event to the frontend
   emitRoutingEvent(trackingId, {
     type: 'sentiment_detected',
-    sentiment,
+    sentiment: finalSentiment,
     timestamp: new Date().toISOString()
   });
 
-  return {
-    sentiment,
+  const outputs = {
+    sentiment: finalSentiment,
     trace: ['sentimentNode']
   };
+
+  // If sentiment trend indicates frustration, automatically degrade socratic stiffness
+  if (trendResult.adaptations.includes('skip_socratic')) {
+    outputs.socraticMode = false;
+  }
+
+  return outputs;
 }

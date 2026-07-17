@@ -144,6 +144,7 @@ export async function callOtariStream({
     model: model,
     messages: formattedMessages,
     stream: true,
+    stream_options: { include_usage: true },
     extra_body: {
       client_name: sessionId || 'default-session',
       guardrails: [

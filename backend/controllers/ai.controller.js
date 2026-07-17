@@ -3,8 +3,6 @@ import { getAllBudgetStats } from '../services/budget.service.js';
 import { emitRoutingEvent } from '../services/socket.service.js';
 import { Session } from '../models/Session.model.js';
 
-
-
 async function searchWeb(query) {
   try {
     const controller = new AbortController();
@@ -38,6 +36,7 @@ const MODEL_DISPLAY_NAMES = {
   'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
   'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
   'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
+  'google:gemini-3.5-flash': 'Gemini 3.5 Flash',
 };
 
 export async function handleAIChat(req, res, next) {
@@ -52,12 +51,24 @@ export async function handleAIChat(req, res, next) {
     const startTime = Date.now();
     const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
 
+    let activeChatHistory = chatHistory;
+    if ((!activeChatHistory || activeChatHistory.length === 0) && userId && sessionId) {
+      const session = await Session.findOne({ sessionId, userId });
+      if (session && session.messages) {
+        activeChatHistory = session.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          sentiment: msg.sentiment,
+        }));
+      }
+    }
+
     // Run the compiled LangGraph workflow state machine
     const finalState = await graph.invoke({
       message,
       sessionId,
       userId,
-      chatHistory,
+      chatHistory: activeChatHistory,
       socraticMode,
       webSearchMode,
     });
@@ -161,14 +172,32 @@ export async function handleAIChatStream(req, res, next) {
     const startTime = Date.now();
     const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
 
-    // For stream, invoke graph to get full state, then simulate streaming responses back to keep frontend compatibility
+    let activeChatHistory = chatHistory;
+    if ((!activeChatHistory || activeChatHistory.length === 0) && userId && sessionId) {
+      const session = await Session.findOne({ sessionId, userId });
+      if (session && session.messages) {
+        activeChatHistory = session.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          sentiment: msg.sentiment,
+        }));
+      }
+    }
+
+    // For stream, invoke graph to get full state, streaming tokens to client in real-time
     const finalState = await graph.invoke({
       message,
       sessionId,
       userId,
-      chatHistory,
+      chatHistory: activeChatHistory,
       socraticMode,
       webSearchMode,
+    }, {
+      configurable: {
+        writer: (chunk) => {
+          res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+        }
+      }
     });
 
     if (finalState.injectionStatus === 'blocked') {
@@ -180,16 +209,6 @@ export async function handleAIChatStream(req, res, next) {
       const stats = await getAllBudgetStats(trackingId);
       res.write(`data: ${JSON.stringify({ error: 'budget_exceeded', message: 'Budget exceeded.', budgetStats: stats })}\n\n`);
       return res.end();
-    }
-
-    const answer = finalState.answer || '';
-    const words = answer.split(' ');
-    
-    // Stream output words to simulate streaming chunks
-    for (let i = 0; i < words.length; i++) {
-      const chunk = words[i] + (i === words.length - 1 ? '' : ' ');
-      res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-      await new Promise(r => setTimeout(r, 20)); // simulated streaming chunk intervals
     }
 
     const responsePayload = {

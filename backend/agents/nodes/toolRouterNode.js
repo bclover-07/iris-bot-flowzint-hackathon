@@ -2,6 +2,7 @@ import { classifyPrompt } from '../../services/classifier.service.js';
 import { getBudgetMode, getDegradedModel, getAllBudgetStats } from '../../services/budget.service.js';
 import { MODELS } from '../../config/otari.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
+import { searchGrounded } from '../../services/gemini.service.js';
 
 const MODEL_DISPLAY_NAMES = {
   'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
@@ -105,7 +106,7 @@ export async function toolRouterNode(state) {
       message: `Browsing live web for current references...`,
       timestamp: new Date().toISOString()
     });
-    webSearchResults = await searchWeb(message);
+    webSearchResults = await searchGrounded(message);
   }
 
   emitRoutingEvent(trackingId, {
