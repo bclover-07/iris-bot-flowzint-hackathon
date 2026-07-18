@@ -1213,7 +1213,7 @@ const VRM_BONE_MAP = {
   rightFoot:                  'rightFoot',
 };
 
-export class GestureEngine {
+class GestureEngine {
   constructor(THREE) {
     this.THREE = THREE;
     this.gestures = createGestureDefinitions();
@@ -1246,13 +1246,8 @@ export class GestureEngine {
     } else if (scene) {
       scene.traverse((node) => {
         if (node.isBone) {
-          const nodeName = node.name.toLowerCase();
           for (const [logicalName, searchName] of Object.entries(VRM_BONE_MAP)) {
-            const searchLower = searchName.toLowerCase();
-            let altSearch = searchLower.replace('left', 'l_').replace('right', 'r_');
-            altSearch = altSearch.replace('proximal', '1').replace('intermediate', '2').replace('distal', '3').replace('metacarpal', '0');
-            
-            if (nodeName.includes(searchLower) || nodeName.includes(altSearch)) {
+            if (node.name.toLowerCase().includes(searchName.toLowerCase())) {
               this.boneNodes[logicalName] = node;
               this.restPoses[logicalName] = new this.THREE.Quaternion().copy(node.quaternion);
               this.currentPose[logicalName] = new this.THREE.Quaternion().copy(node.quaternion);
@@ -1318,7 +1313,7 @@ export class GestureEngine {
         }
       }
       
-      if (this.restPoses[boneName]) {
+      if (isHandOrFinger && this.restPoses[boneName]) {
         targetPose[boneName] = this.restPoses[boneName].clone().multiply(q);
       } else {
         targetPose[boneName] = q;
@@ -1397,14 +1392,14 @@ export class GestureEngine {
         }
         
         let finalQ = q;
-        if (this.restPoses[boneName]) {
+        if (isHandOrFinger && this.restPoses[boneName]) {
           finalQ = this.restPoses[boneName].clone().multiply(q);
         }
 
         if (targetPose[boneName]) {
           targetPose[boneName].slerp(finalQ, weight);
         } else {
-          const baseQ = this.restPoses[boneName] ? this.restPoses[boneName].clone() : new Q();
+          const baseQ = (isHandOrFinger && this.restPoses[boneName]) ? this.restPoses[boneName].clone() : new Q();
           targetPose[boneName] = baseQ.slerp(finalQ, weight);
         }
       }
@@ -1436,10 +1431,12 @@ export class GestureEngine {
         if (targetPose[boneName]) {
           targetPose[boneName].multiply(qOsc);
         } else {
-          const baseQ = this.restPoses[boneName] ? this.restPoses[boneName].clone() : new Q();
+          const baseQ = (isHandOrFinger && this.restPoses[boneName]) ? this.restPoses[boneName].clone() : new Q();
           targetPose[boneName] = baseQ.multiply(qOsc);
         }
       }
     }
   }
 }
+
+module.exports = { GestureEngine };

@@ -1,45 +1,52 @@
 'use strict';
 
 const IDLE_POSE_CYCLE = [
-  null,
   'IdleWeightShiftLeft',
-  null,
   'IdleWeightShiftRight',
-  null,
   'IdleShoulderAdjust',
-  null,
   'IdleNeckStretch',
-  null,
   'IdleFingerFidget',
-  null,
   'IdleLookAway',
-  null,
-  'IdleArmCross',
-  null,
-  'IdleHandsBehindBack',
-  null,
-  'IdleHandsOnHips',
-  null,
+  'HandOnHipLeft',
+  'HandsInFront',
   'IdleSway',
+  'HairTuck',
+  'HandOnHipRight',
+  'HandsBehindBack',
+  'ShoulderRoll',
+  'IdleArmCross',
+  'IdleBreathing',
+];
+
+const TALKING_GESTURE_CYCLE = [
+  'TalkNeutral',
+  'TalkExcited',
+  'TalkCalm',
+  'TalkEmphatic',
+  'TalkExplain',
+  'TalkList',
+  'TalkConclude',
+  'TalkAgree',
+  'Explain',
 ];
 
 export class IdleAnimationSystem {
   constructor() {
     this.enabled = true;
-    this.breathingEnabled = true;
     this.idlePoseEnabled = true;
     this.microMovementsEnabled = true;
 
-    this.breathPhase = 0;
-
     this.idlePoseTimer = 0;
-    this.idlePoseInterval = 12 + Math.random() * 8;
+    this.idlePoseInterval = 3 + Math.random() * 4; // Much faster idle shifting
     this.idlePoseCycleIndex = 0;
     this.currentIdlePose = null;
     this.idlePoseDuration = 0;
 
+    this.talkingPoseTimer = 0;
+    this.talkingPoseInterval = 2 + Math.random() * 3;
+
     this.headMicroTimer = 0;
-    this.headMicroInterval = 3 + Math.random() * 4;
+    this.headMicroInterval = 2 + Math.random() * 3;
     this.headMicroTargetX = 0;
     this.headMicroTargetZ = 0;
     this.headMicroCurrentX = 0;
@@ -51,7 +58,6 @@ export class IdleAnimationSystem {
     this.isDoingGesture = false;
 
     this._THREE = null;
-    this._breathQ = null;
     this._headMicroQ = null;
     this._tempQ = null;
   }
@@ -63,7 +69,6 @@ export class IdleAnimationSystem {
     if (gestureEngine && gestureEngine.THREE) {
       this._THREE = gestureEngine.THREE;
       const Q = this._THREE.Quaternion;
-      this._breathQ = new Q();
       this._headMicroQ = new Q();
       this._tempQ = new Q();
     }
@@ -73,6 +78,9 @@ export class IdleAnimationSystem {
     this.isTalking = talking;
     if (talking) {
       this.currentIdlePose = null;
+      this.talkingPoseTimer = this.talkingPoseInterval; // Trigger immediately
+    } else {
+      if (this.gestureEngine) this.gestureEngine.setGesture('IdleBreathing');
     }
   }
 
@@ -83,43 +91,29 @@ export class IdleAnimationSystem {
   update(delta, time) {
     if (!this.enabled || !this._THREE) return;
 
-    if (this.breathingEnabled) {
-      this._updateBreathing(delta, time);
-    }
-
-    if (!this.isTalking && !this.isDoingGesture) {
+    if (this.isTalking) {
+       this._updateTalkingPose(delta, time);
+    } else if (!this.isDoingGesture) {
       if (this.idlePoseEnabled) {
         this._updateIdlePose(delta, time);
       }
-      if (this.microMovementsEnabled) {
-        this._updateHeadMicroMovements(delta, time);
-      }
+    }
+    
+    // Always do micro movements
+    if (this.microMovementsEnabled) {
+      this._updateHeadMicroMovements(delta, time);
     }
   }
 
-  _updateBreathing(delta, time) {
-    this.breathPhase = time * 1.5;
-    const breathVal = Math.sin(this.breathPhase);
-
-    if (this.gestureEngine) {
-      const V = this._THREE.Vector3;
-
-      const chestNode = this.gestureEngine.boneNodes.chest;
-      if (chestNode) {
-        const breathAngle = breathVal * 0.012;
-        this._breathQ.setFromAxisAngle(new V(1, 0, 0), breathAngle);
-        this._tempQ.copy(chestNode.quaternion);
-        chestNode.quaternion.copy(this._tempQ).multiply(this._breathQ);
-        chestNode.quaternion.normalize();
-      }
-
-      const upperChestNode = this.gestureEngine.boneNodes.upperChest;
-      if (upperChestNode) {
-        const breathAngle2 = breathVal * 0.008;
-        this._breathQ.setFromAxisAngle(new V(1, 0, 0), breathAngle2);
-        this._tempQ.copy(upperChestNode.quaternion);
-        upperChestNode.quaternion.copy(this._tempQ).multiply(this._breathQ);
-        upperChestNode.quaternion.normalize();
+  _updateTalkingPose(delta, time) {
+    this.talkingPoseTimer += delta;
+    if (this.talkingPoseTimer >= this.talkingPoseInterval) {
+      this.talkingPoseTimer = 0;
+      this.talkingPoseInterval = 3 + Math.random() * 4;
+      
+      if (this.gestureEngine && !this.gestureEngine.isGestureActive() && this.gestureEngine.gestureQueue.length === 0) {
+        const randomGesture = TALKING_GESTURE_CYCLE[Math.floor(Math.random() * TALKING_GESTURE_CYCLE.length)];
+        this.gestureEngine.setGesture(randomGesture);
       }
     }
   }
@@ -132,21 +126,21 @@ export class IdleAnimationSystem {
       if (this.idlePoseDuration <= 0) {
         this.currentIdlePose = null;
         if (this.gestureEngine && !this.gestureEngine.isGestureActive()) {
-          this.gestureEngine.setGesture(null);
+          this.gestureEngine.setGesture('IdleBreathing'); // Fallback to breathing
         }
       }
     }
 
     if (this.idlePoseTimer >= this.idlePoseInterval && !this.currentIdlePose) {
       this.idlePoseTimer = 0;
-      this.idlePoseInterval = 10 + Math.random() * 10;
+      this.idlePoseInterval = 4 + Math.random() * 5;
 
       const nextPose = IDLE_POSE_CYCLE[this.idlePoseCycleIndex % IDLE_POSE_CYCLE.length];
       this.idlePoseCycleIndex++;
 
       if (nextPose && this.gestureEngine && !this.gestureEngine.isGestureActive()) {
         this.currentIdlePose = nextPose;
-        this.idlePoseDuration = 3 + Math.random() * 3;
+        this.idlePoseDuration = 4 + Math.random() * 3;
         this.gestureEngine.setGesture(nextPose);
       }
     }
@@ -157,19 +151,20 @@ export class IdleAnimationSystem {
 
     if (this.headMicroTimer >= this.headMicroInterval) {
       this.headMicroTimer = 0;
-      this.headMicroInterval = 3 + Math.random() * 5;
+      this.headMicroInterval = 1.5 + Math.random() * 3;
 
-      this.headMicroTargetX = (Math.random() - 0.5) * 0.06;
-      this.headMicroTargetZ = (Math.random() - 0.5) * 0.05;
+      // More pronounced micro-movements
+      this.headMicroTargetX = (Math.random() - 0.5) * 0.15;
+      this.headMicroTargetZ = (Math.random() - 0.5) * 0.12;
     }
 
-    const headLerp = Math.min(1, 2 * delta);
+    const headLerp = Math.min(1, 3 * delta);
     this.headMicroCurrentX += (this.headMicroTargetX - this.headMicroCurrentX) * headLerp;
     this.headMicroCurrentZ += (this.headMicroTargetZ - this.headMicroCurrentZ) * headLerp;
 
     if (this.gestureEngine) {
       const headNode = this.gestureEngine.boneNodes.head;
-      if (headNode && !this.isTalking) {
+      if (headNode) {
         const V = this._THREE.Vector3;
         this._headMicroQ.setFromAxisAngle(new V(1, 0, 0), this.headMicroCurrentX * 0.15);
         const zQ = this._tempQ.setFromAxisAngle(new V(0, 0, 1), this.headMicroCurrentZ * 0.15);
@@ -189,5 +184,6 @@ export class IdleAnimationSystem {
     this.headMicroTimer = 0;
     this.headMicroCurrentX = 0;
     this.headMicroCurrentZ = 0;
+    this.talkingPoseTimer = 0;
   }
 }

@@ -137,6 +137,12 @@ export default function AvatarChat() {
 
           if (vrm) {
             vrmRef.current = vrm;
+            console.log('[DEBUG VRM]', vrm);
+            console.log('[DEBUG Humanoid]', vrm.humanoid);
+            if (vrm.humanoid) {
+               console.log('[DEBUG getNormalizedBoneNode function]', typeof vrm.humanoid.getNormalizedBoneNode);
+               console.log('[DEBUG getRawBoneNode function]', typeof vrm.humanoid.getRawBoneNode);
+            }
           }
 
           const box = new THREE.Box3().setFromObject(avatar);
@@ -202,7 +208,7 @@ export default function AvatarChat() {
         lastTimeRef.current = now;
         const t = now / 1000;
 
-
+        if (vrmRef.current) vrmRef.current.update(delta);
 
         try {
           if (gestureEngineRef.current?.initialized && gestureEngineRef.current.update) {
@@ -222,8 +228,6 @@ export default function AvatarChat() {
         if (responsiveCameraRef.current) {
           responsiveCameraRef.current.update(delta);
         }
-
-        if (vrmRef.current) vrmRef.current.update(delta);
 
         renderer.render(scene, camera);
       };
@@ -398,6 +402,7 @@ export default function AvatarChat() {
     }
 
     let reply = '';
+    let apiResponse = null;
     try {
       let currentSessionId = 'demo-session-id';
       try {
@@ -415,8 +420,8 @@ export default function AvatarChat() {
       if (options.webSearch) payload.webSearchMode = true;
       if (options.socratic) payload.socraticMode = true;
 
-      const res = await api.post('/api/ai/chat', payload);
-      reply = res.answer || "I'm here to help! Ask me anything.";
+      apiResponse = await api.post('/api/ai/chat', payload);
+      reply = apiResponse.answer || "I'm here to help! Ask me anything.";
     } catch (err) {
       console.error('Avatar chat error:', err);
       reply = err?.data?.message || "I'm having trouble connecting right now. Please try again!";
@@ -437,21 +442,20 @@ export default function AvatarChat() {
       }
 
       if (expressionCtrl) {
-        // Backend Sentiment driven expressions
         let finalExpression = responseAnalysis.expression;
         let finalWeight = responseAnalysis.expressionWeight;
-        
-        if (res.sentiment && res.sentiment.label) {
-          const sentLabel = res.sentiment.label;
+
+        if (apiResponse && apiResponse.sentiment && apiResponse.sentiment.label) {
+          const sentLabel = apiResponse.sentiment.label;
           if (sentLabel === 'VERY_POSITIVE' || sentLabel === 'POSITIVE') {
             finalExpression = 'happy';
             finalWeight = 0.8;
           } else if (sentLabel === 'VERY_NEGATIVE' || sentLabel === 'NEGATIVE' || sentLabel === 'FRUSTRATED') {
-            finalExpression = 'sad'; // Empathetic concern
+            finalExpression = 'sad';
             finalWeight = 0.7;
           }
         }
-        
+
         expressionCtrl.setExpression(finalExpression, finalWeight);
         expressionCtrl.setBrowRaise(responseAnalysis.browRaise || 0);
       }

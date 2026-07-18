@@ -23,6 +23,8 @@ const EXPRESSION_PRESETS = {
   relaxed:   ['Relaxed', 'relaxed'],
 };
 
+const VRM_EXPRESSION_NAMES = ['happy', 'angry', 'sad', 'surprised', 'neutral', 'relaxed'];
+
 const PHONEME_PATTERNS = [
   { regex: /[aA]/, viseme: 'aa', weight: 0.85 },
   { regex: /[iI]/, viseme: 'ih', weight: 0.7 },
@@ -52,6 +54,7 @@ export class ExpressionController {
     this.doubleBlink = false;
 
     this.currentExpression = 'neutral';
+    this.previousExpression = 'neutral';
     this.targetExpression = 'neutral';
     this.expressionWeight = 0;
     this.targetExpressionWeight = 0;
@@ -75,6 +78,10 @@ export class ExpressionController {
 
     this.browRaise = 0;
     this.targetBrowRaise = 0;
+
+    this.microBrowTimer = 0;
+    this.microBrowValue = 0;
+    this.nextMicroBrowTime = 2.0;
   }
 
   init(vrm, morphMeshes) {
@@ -93,6 +100,7 @@ export class ExpressionController {
     this._updateVisemes(delta, time);
     this._updateGaze(delta, time);
     this._updateBrow(delta);
+    this._updateMicroExpressions(delta, time);
   }
 
   setExpression(expressionName, weight = 1.0) {
@@ -184,9 +192,12 @@ export class ExpressionController {
 
   _updateExpression(delta) {
     const lerpSpeed = this.expressionTransitionSpeed * delta;
+
     if (this.currentExpression !== this.targetExpression) {
       this.expressionWeight = Math.max(0, this.expressionWeight - lerpSpeed);
       if (this.expressionWeight <= 0.01) {
+        this._resetAllExpressions();
+        this.previousExpression = this.currentExpression;
         this.currentExpression = this.targetExpression;
         this.expressionWeight = 0;
       }
@@ -208,7 +219,7 @@ export class ExpressionController {
     }
 
     this.visemeTimer += delta;
-    const visemeDuration = 0.08 + Math.random() * 0.04;
+    const visemeDuration = 0.10 + Math.random() * 0.08;
 
     if (this.visemeTimer >= visemeDuration) {
       this.visemeTimer = 0;
@@ -255,6 +266,35 @@ export class ExpressionController {
     this.browRaise += (this.targetBrowRaise - this.browRaise) * browLerp;
   }
 
+  _updateMicroExpressions(delta, time) {
+    if (!this.isSpeaking) return;
+
+    this.microBrowTimer += delta;
+    if (this.microBrowTimer >= this.nextMicroBrowTime) {
+      this.microBrowTimer = 0;
+      this.nextMicroBrowTime = 1.5 + Math.random() * 3.0;
+      this.microBrowValue = (Math.random() - 0.3) * 0.12;
+    }
+
+    const microLerp = Math.min(1, 3 * delta);
+    const currentMicroBrow = this.microBrowValue;
+    this.targetBrowRaise = Math.max(this.targetBrowRaise, currentMicroBrow);
+  }
+
+  _resetAllExpressions() {
+    if (this.useVRMExpressions && this.vrm?.expressionManager) {
+      for (const name of VRM_EXPRESSION_NAMES) {
+        try {
+          this.vrm.expressionManager.setValue(name, 0);
+        } catch (e) {}
+      }
+    } else {
+      for (const [name, keys] of Object.entries(EXPRESSION_PRESETS)) {
+        this._applyMorphByKeys(keys, 0);
+      }
+    }
+  }
+
   _applyBlinkMorph(value) {
     if (this.useVRMExpressions && this.vrm?.expressionManager) {
       try {
@@ -272,9 +312,20 @@ export class ExpressionController {
 
     if (this.useVRMExpressions && this.vrm?.expressionManager) {
       try {
+        for (const otherName of VRM_EXPRESSION_NAMES) {
+          if (otherName !== name) {
+            this.vrm.expressionManager.setValue(otherName, 0);
+          }
+        }
         this.vrm.expressionManager.setValue(name, weight);
         return;
       } catch (e) {}
+    }
+
+    for (const [otherName, otherKeys] of Object.entries(EXPRESSION_PRESETS)) {
+      if (otherName !== name) {
+        this._applyMorphByKeys(otherKeys, 0);
+      }
     }
 
     const keys = EXPRESSION_PRESETS[name];
