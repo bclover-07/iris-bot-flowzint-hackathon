@@ -57,7 +57,7 @@ export default function LoginPage() {
         }
         setUserId(data.userId);
         if (data.otpHint) setOtpHint(data.otpHint);
-        setSuccess(data.otpHint || 'OTP sent to your email. Please check your inbox.');
+        setSuccess('Enter the OTP code below to login.');
         setMode('otp_verify');
       } else if (mode === 'otp_verify') {
         const res = await fetch(`${getApiUrl()}/api/auth/login/verify-otp`, {
@@ -163,9 +163,14 @@ export default function LoginPage() {
             {mode === 'otp_verify' && (
               <div>
                 {otpHint && (
-                  <div className="mb-3 p-3 bg-sunny/30 border-3 border-sunny text-ink font-bold text-sm text-center rounded-xl">
-                    💡 {otpHint}
-                  </div>
+                  <>
+                    <div className="mb-3 p-3 bg-sunny/30 border-3 border-sunny text-ink font-bold text-sm text-center rounded-xl">
+                      💡 {otpHint}
+                    </div>
+                    <p className="text-[10px] text-ink/50 text-center mb-3 italic">
+                      ⚠️ OTP is displayed on-screen due to Render&apos;s free-tier SMTP restrictions. For demo purposes only.
+                    </p>
+                  </>
                 )}
                 <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-2">
                   <RiShieldCheckLine className="w-4 h-4" /> OTP Code

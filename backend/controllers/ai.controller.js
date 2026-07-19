@@ -61,11 +61,27 @@ export async function handleAIChat(req, res, next) {
       });
     }
 
-    // Construct response payload exactly as expected by the frontend
+    // Build routing object: prioritize toolRouter/LLM routing over RAG context routing
+    let routing = null;
+    if (finalState.selectedModel && finalState.routingReason) {
+      routing = {
+        model: finalState.selectedModel,
+        modelDisplayName: MODEL_DISPLAY_NAMES[finalState.selectedModel] || finalState.selectedModel,
+        tier: finalState.classification?.tier || 'simple',
+        reason: finalState.webSearchResults 
+          ? `[WEB SEARCH] ${finalState.routingReason}` 
+          : finalState.routingReason,
+        degraded: finalState.degraded || false,
+        budgetMode: finalState.budgetMode || 'normal',
+      };
+    } else if (finalState.retrievedContext?.routing) {
+      routing = finalState.retrievedContext.routing;
+    }
+
     const responsePayload = {
       answer: finalState.answer,
-      source: finalState.retrievedContext ? (finalState.retrievedContext.source || 'knowledge-base') : 'otari',
-      routing: finalState.routing || (finalState.retrievedContext ? finalState.retrievedContext.routing : null),
+      source: finalState.webSearchResults ? 'web-search' : (finalState.retrievedContext ? (finalState.retrievedContext.source || 'knowledge-base') : 'otari'),
+      routing,
       cost: finalState.cost || (finalState.retrievedContext ? finalState.retrievedContext.cost : null),
       costSavings: finalState.costSavings || { actualCost: 0, worstCaseCost: 0, saved: 0, savedPercent: 0 },
       tokens: finalState.tokens || { input: 0, output: 0 },
@@ -179,10 +195,27 @@ export async function handleAIChatStream(req, res, next) {
       return res.end();
     }
 
+    // Build routing object: prioritize toolRouter/LLM routing over RAG context routing
+    let routing = null;
+    if (finalState.selectedModel && finalState.routingReason) {
+      routing = {
+        model: finalState.selectedModel,
+        modelDisplayName: MODEL_DISPLAY_NAMES[finalState.selectedModel] || finalState.selectedModel,
+        tier: finalState.classification?.tier || 'simple',
+        reason: finalState.webSearchResults 
+          ? `[WEB SEARCH] ${finalState.routingReason}` 
+          : finalState.routingReason,
+        degraded: finalState.degraded || false,
+        budgetMode: finalState.budgetMode || 'normal',
+      };
+    } else if (finalState.retrievedContext?.routing) {
+      routing = finalState.retrievedContext.routing;
+    }
+
     const responsePayload = {
       answer: finalState.answer,
-      source: finalState.retrievedContext ? (finalState.retrievedContext.source || 'knowledge-base') : 'otari',
-      routing: finalState.routing || (finalState.retrievedContext ? finalState.retrievedContext.routing : null),
+      source: finalState.webSearchResults ? 'web-search' : (finalState.retrievedContext ? (finalState.retrievedContext.source || 'knowledge-base') : 'otari'),
+      routing,
       cost: finalState.cost || (finalState.retrievedContext ? finalState.retrievedContext.cost : null),
       costSavings: finalState.costSavings || { actualCost: 0, worstCaseCost: 0, saved: 0, savedPercent: 0 },
       tokens: finalState.tokens || { input: 0, output: 0 },
