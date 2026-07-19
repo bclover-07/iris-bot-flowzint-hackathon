@@ -33,6 +33,39 @@ async function getSentimentPipeline() {
   return sentimentPipeline;
 }
 
+async function analyzeSentimentAPI(text, apiKey) {
+  try {
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/distilbert-base-uncased-finetuned-sst-2-english',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ inputs: text.slice(0, 512) })
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`HF Inference API error: ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data[0] && data[0].length > 0) {
+      let maxItem = data[0][0];
+      for (const item of data[0]) {
+        if (item.score > maxItem.score) {
+          maxItem = item;
+        }
+      }
+      return maxItem;
+    }
+    throw new Error('Invalid HF Inference response format');
+  } catch (err) {
+    console.error('[Sentiment] API analysis failed, falling back to local model:', err.message);
+    return null;
+  }
+}
+
 /**
  * Analyze the sentiment of a user message.
  * Returns a structured result with emotion label, score, and behavioral guidance.
@@ -41,6 +74,34 @@ async function getSentimentPipeline() {
  * @returns {Promise<{label: string, score: number, emoji: string, behavior: string}>}
  */
 export async function analyzeSentiment(text) {
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  if (apiKey) {
+    const apiResult = await analyzeSentimentAPI(text, apiKey);
+    if (apiResult) {
+      const label = (apiResult.label || '').toUpperCase();
+      const score = apiResult.score || 0.5;
+
+      if (label === 'POSITIVE' || label === 'LABEL_1') {
+        if (score > 0.95) {
+          return { label: 'VERY_POSITIVE', score, emoji: '😊', behavior: 'enthusiastic' };
+        }
+        return { label: 'POSITIVE', score, emoji: '🙂', behavior: 'standard' };
+      }
+
+      if (label === 'NEGATIVE' || label === 'LABEL_0') {
+        if (score > 0.9) {
+          return { label: 'VERY_NEGATIVE', score, emoji: '😤', behavior: 'empathetic_direct' };
+        }
+        if (score > 0.75) {
+          return { label: 'FRUSTRATED', score, emoji: '😕', behavior: 'concise_helpful' };
+        }
+        return { label: 'SLIGHTLY_NEGATIVE', score, emoji: '😐', behavior: 'standard' };
+      }
+
+      return { label: 'NEUTRAL', score: 0.5, emoji: '😐', behavior: 'standard' };
+    }
+  }
+
   const pipe = await getSentimentPipeline();
 
   if (!pipe) {
@@ -117,6 +178,10 @@ export function analyzeSentimentTrend(history) {
  * Pre-warm the sentiment model on server startup.
  */
 export async function warmUpSentimentModel() {
+  if (process.env.HUGGINGFACE_API_KEY) {
+    console.log('[Sentiment] HF API Key detected, skipping local pre-warm.');
+    return;
+  }
   console.log('[Sentiment] Pre-warming model...');
   await analyzeSentiment('warmup test');
   console.log('[Sentiment] Model ready');

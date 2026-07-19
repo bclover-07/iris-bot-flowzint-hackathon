@@ -3,7 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'; // reload trigger for env change
 import { connectDB } from './config/db.js';
 import { initSocketService } from './services/socket.service.js';
 import authRoutes from './routes/auth.routes.js';
