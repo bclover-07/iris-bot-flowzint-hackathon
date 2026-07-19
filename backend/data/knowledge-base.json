@@ -402,5 +402,49 @@
   {
     "question": "What is a pH scale?",
     "answer": "Measure of acidity."
+  },
+  {
+    "question": "Who developed IRIS Bot?",
+    "answer": "IRIS Bot was developed by Shivam Tonpe (black.clover.07sss@gmail.com) for the FlowZint AI Hackathon 2026. It is a cost-effective cognitive routing educational support chatbot."
+  },
+  {
+    "question": "What is the tech stack of IRIS Bot?",
+    "answer": "IRIS Bot's tech stack includes Next.js, React 19, Tailwind CSS v4, Framer Motion, Recharts, Three.js, Node.js, Express, Mongoose, Socket.io, LangGraph.js, LangChain, HuggingFace Transformers.js, and the Mozilla Otari LLM gateway."
+  },
+  {
+    "question": "How do I reset my daily budget?",
+    "answer": "To reset your daily AI budget, navigate to the Budget Dashboard settings and click the Reset button. This will reset your spent tokens count to $0, allowing you to use premium models like Claude Sonnet 4.6 again."
+  },
+  {
+    "question": "Is my data secure in IRIS Bot?",
+    "answer": "Yes, IRIS Bot has a three-layer security framework called PIGuard: Layer 1 runs local regex heuristic scanning on your prompt. Layer 2 integrates Mozilla Otari PIGuard gateway checks. Layer 3 scans final outputs for system prompt leaks before sending them to you."
+  },
+  {
+    "question": "How does sentiment-aware routing work in IRIS?",
+    "answer": "IRIS runs local sentiment analysis on your messages. If the local DistilBERT model detects that you are frustrated, the bot automatically turns off Socratic mentor mode and switches to direct problem-solving with empathetic language."
+  },
+  {
+    "question": "Can I use voice chat in IRIS?",
+    "answer": "Yes! IRIS supports voice interactions. In the 3D Avatar view, click the microphone button to dictate your question using Speech-to-Text, and click the volume icon to enable Text-to-Speech voice synthesis."
+  },
+  {
+    "question": "How does the RAG vector search work in IRIS?",
+    "answer": "When you ask a question, the server uses a local HuggingFace embedding pipeline (all-MiniLM-L6-v2) to generate a 384-dimensional vector. It compares this vector to the KnowledgeBase database. If it finds a close match (score > 85%), it answers instantly at zero API cost."
+  },
+  {
+    "question": "What is the difference between Kimi, Haiku, and Sonnet in IRIS?",
+    "answer": "IRIS routes queries based on complexity: simple definitions/fact-checks go to Kimi K2.6 ($0.14/1M tokens); explanations/comparisons go to Claude Haiku 4.5 ($0.25 in / $1.25 out); coding and deep analysis go to Claude Sonnet 4.6 ($3 in / $15 out)."
+  },
+  {
+    "question": "What is the AI Decision Journey map on the sidebar?",
+    "answer": "The AI Decision Journey map is a live visual debugger showing the real-time execution steps of the LangGraph agent: sentiment analysis, firewall checks, vector search, complexity router decisions, LLM generation metrics, and final output safety validation."
+  },
+  {
+    "question": "How does the circuit breaker work in IRIS?",
+    "answer": "If a premium model like Claude Sonnet 4.6 returns a 404/502 error, the Otari circuit breaker detects the failure, adds the model to a disabled list, and gracefully falls back to Kimi K2.6 so the app never crashes."
+  },
+  {
+    "question": "What is the purpose of Socratic mode?",
+    "answer": "Socratic mode guides students to find answers on their own by asking probing questions rather than giving direct answers. This promotes critical thinking and deeper conceptual learning."
   }
 ]

@@ -1,103 +1,220 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RiCheckLine, RiLoader4Line } from 'react-icons/ri';
+import { 
+  RiCheckLine, 
+  RiLoader4Line, 
+  RiEmotionNormalLine, 
+  RiShieldKeyholeLine, 
+  RiDatabaseLine, 
+  RiGitCommitLine, 
+  RiCpuLine, 
+  RiShieldCheckLine, 
+  RiTimeLine,
+  RiArrowRightSLine
+} from 'react-icons/ri';
 
 const STEPS = [
-  { id: 1, label: 'Sentiment' },
-  { id: 2, label: 'Security' },
-  { id: 3, label: 'KB RAG' },
-  { id: 4, label: 'Router' },
-  { id: 5, label: 'LLM Gen' },
-  { id: 6, label: 'Validate' },
+  { id: 1, label: 'Sentiment Analysis', icon: RiEmotionNormalLine, color: 'bg-sunny' },
+  { id: 2, label: 'PIGuard Firewall', icon: RiShieldKeyholeLine, color: 'bg-coral' },
+  { id: 3, label: 'RAG Retrieval', icon: RiDatabaseLine, color: 'bg-sky' },
+  { id: 4, label: 'Cognitive Router', icon: RiGitCommitLine, color: 'bg-iris-purple' },
+  { id: 5, label: 'LLM Generation', icon: RiCpuLine, color: 'bg-sunny' },
+  { id: 6, label: 'Output Validator', icon: RiShieldCheckLine, color: 'bg-mint' },
 ];
 
-/**
- * Renders a live visual flow of the LangGraph agent execution.
- * Connects to live routing feed steps and highlights the active nodes.
- */
-export default function AgentThinkingGraph({ currentStep = 0, status = 'idle', logs = [] }) {
-  return (
-    <div className="bg-cream border-[3px] border-ink rounded-2xl p-4 shadow-[4px_4px_0_#1A1A2E] w-full">
-      <h4 className="text-[10px] font-black uppercase text-ink/50 tracking-[0.2em] mb-4">
-        Cognitive Workflow Graph
-      </h4>
+export default function AgentThinkingGraph({ events = [], currentStep = 0, status = 'idle', logs = [] }) {
+  // Extract step data helper
+  const getStepData = (stepId) => {
+    const doneEvent = events.find(
+      (e) => e.type === 'routing_step' && e.step === stepId && e.status === 'done'
+    );
+    return doneEvent ? doneEvent.data : null;
+  };
 
-      {/* Steps Node Flow */}
-      <motion.div 
-        className="grid grid-cols-6 gap-1 relative mb-4"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 }
-          }
-        }}
-      >
-        {/* Connecting Line background */}
-        <div className="absolute top-[18px] left-[8%] right-[8%] h-[4px] bg-ink/10 z-0 rounded overflow-hidden">
-          <motion.div 
-            className="h-full bg-iris-purple"
-            initial={{ width: '0%' }}
-            animate={{ width: `${Math.min(((currentStep - 1) / (STEPS.length - 1)) * 100, 100)}%` }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-          />
-        </div>
+  const getStepMessage = (stepId) => {
+    const doneEvent = events.find(
+      (e) => e.type === 'routing_step' && e.step === stepId && e.status === 'done'
+    );
+    return doneEvent ? doneEvent.message : null;
+  };
+
+  return (
+    <div className="bg-white border-[3px] border-ink rounded-2xl p-4 shadow-[4px_4px_0_#1A1A2E] w-full">
+      <div className="flex items-center justify-between mb-4 border-b-[2px] border-ink/10 pb-2">
+        <h4 className="text-[10px] font-black uppercase text-ink/65 tracking-[0.2em]">
+          Cognitive Decision Flow
+        </h4>
+        {status !== 'idle' && status !== 'done' && (
+          <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-iris-purple animate-pulse">
+            <RiLoader4Line className="w-3.5 h-3.5 animate-spin" /> Thinking...
+          </span>
+        )}
+      </div>
+
+      {/* Vertical Steps Timeline */}
+      <div className="relative pl-3 space-y-4">
+        {/* Continuous Pipeline Connector Line */}
+        <div className="absolute left-[20px] top-[10px] bottom-[15px] w-[3px] bg-ink/10 rounded" />
+        
+        {/* Animated Progress Overlay Line */}
+        <div className="absolute left-[20px] top-[10px] w-[3px] bg-iris-purple rounded transition-all duration-500"
+             style={{ 
+               height: `${Math.max(0, Math.min(100, ((currentStep - 0.5) / STEPS.length) * 100))}%` 
+             }} 
+        />
 
         {STEPS.map((step) => {
           const isActive = currentStep === step.id && status !== 'done';
           const isCompleted = currentStep > step.id || status === 'done';
           const isPending = currentStep < step.id && status !== 'done';
 
-          let nodeColor = 'bg-white border-ink/30 text-ink/40';
-          if (isActive) nodeColor = 'bg-sunny border-ink text-ink ring-4 ring-sunny/30 shadow-[0_0_15px_rgba(255,204,0,0.6)]';
-          if (isCompleted) nodeColor = 'bg-mint border-ink text-ink shadow-[2px_2px_0_#1A1A2E]';
+          const StepIcon = step.icon;
+          const stepData = getStepData(step.id);
+          const stepMsg = getStepMessage(step.id);
+
+          // Node styling rules
+          let nodeBg = 'bg-white border-ink/20 text-ink/30';
+          let borderStyle = 'border-ink/20';
+          if (isActive) {
+            nodeBg = `${step.color} text-white border-ink ring-4 ring-sunny/30 shadow-[2px_2px_0_#1A1A2E]`;
+            borderStyle = 'border-ink';
+          } else if (isCompleted) {
+            nodeBg = 'bg-mint text-ink border-ink shadow-[2px_2px_0_#1A1A2E]';
+            borderStyle = 'border-ink';
+          }
 
           return (
             <motion.div 
               key={step.id} 
-              className="flex flex-col items-center z-10"
-              variants={{
-                hidden: { opacity: 0, y: 10 },
-                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300 } }
-              }}
+              className="flex gap-3 items-start relative z-10"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: step.id * 0.05 }}
             >
+              {/* Timeline Bullet Node */}
               <motion.div
-                initial={false}
+                className={`w-7 h-7 rounded-full border-[2.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${nodeBg} ${borderStyle}`}
                 animate={isActive ? { scale: [1, 1.15, 1] } : { scale: 1 }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className={`w-9 h-9 rounded-full border-[3px] flex items-center justify-center font-bold text-xs transition-colors duration-300 ${nodeColor}`}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
               >
                 {isCompleted ? (
-                  <RiCheckLine className="w-5 h-5 text-ink font-black" />
-                ) : isActive ? (
-                  <RiLoader4Line className="w-4 h-4 animate-spin text-ink font-black" />
+                  <RiCheckLine className="w-4.5 h-4.5 font-black" />
                 ) : (
-                  step.id
+                  <StepIcon className="w-4 h-4" />
                 )}
               </motion.div>
-              <span className={`text-[8px] font-black uppercase tracking-wider mt-2 text-center transition-all ${
-                isActive ? 'text-ink scale-110 origin-top' : isCompleted ? 'text-ink/75' : 'text-ink/45'
-              }`}>
-                {step.label}
-              </span>
+
+              {/* Node Details Card */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-bold transition-all ${
+                    isActive ? 'text-ink font-black scale-105 origin-left' : isCompleted ? 'text-ink/80' : 'text-ink/40'
+                  }`}>
+                    {step.label}
+                  </span>
+                  
+                  {isActive && (
+                    <span className="px-1.5 py-0.5 text-[8px] font-black uppercase border-[1.5px] border-ink bg-sunny text-ink rounded shadow-[1px_1px_0_#1A1A2E] animate-pulse">
+                      Active
+                    </span>
+                  )}
+                </div>
+
+                {/* Sub-details (if completed and data exists) */}
+                {isCompleted && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-1 bg-cream/35 border border-ink/10 rounded-lg p-1.5 font-mono text-[9px] text-ink/75 space-y-1 shadow-[1px_1px_0_rgba(0,0,0,0.02)]"
+                  >
+                    {/* Render specific metrics per step */}
+                    {step.id === 1 && stepData && (
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-white font-bold">{stepData.label} {stepData.emoji}</span>
+                        <span className="text-ink/50">Score: {Math.round(stepData.score * 100)}%</span>
+                        <span className="text-ink/50">Trend: {stepData.trend}</span>
+                      </div>
+                    )}
+
+                    {step.id === 2 && stepData && (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`px-1.5 py-0.5 rounded border text-[8px] font-black uppercase ${
+                          stepData.isInjection ? 'bg-coral/10 border-coral text-coral' : 'bg-mint/10 border-mint text-ink'
+                        }`}>
+                          {stepData.threatLevel.toUpperCase()}
+                        </span>
+                        <span className="text-ink/60 truncate">{stepMsg || 'No injection threats.'}</span>
+                      </div>
+                    )}
+
+                    {step.id === 3 && stepData && (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-white font-bold uppercase">{stepData.source}</span>
+                          {stepData.score && <span className="text-ink/50">Match: {stepData.score}%</span>}
+                        </div>
+                        {stepData.direct && <span className="text-[8px] font-black text-mint uppercase">⚡ Direct bypass (Bypassed LLM)</span>}
+                      </div>
+                    )}
+
+                    {step.id === 4 && stepData && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-sunny font-bold">{stepData.modelDisplayName}</span>
+                          <span className="text-ink/50 uppercase text-[8px]">Tier: {stepData.classification?.tier}</span>
+                          {stepData.degraded && (
+                            <span className="px-1 py-0.5 bg-coral text-white font-bold rounded text-[7px] uppercase animate-pulse">Budget Degraded</span>
+                          )}
+                        </div>
+                        <p className="text-[8.5px] text-ink/60 italic leading-tight">{stepData.routingReason}</p>
+                      </div>
+                    )}
+
+                    {step.id === 5 && stepData && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-ink/50">In: <b>{stepData.tokens?.input}</b> / Out: <b>{stepData.tokens?.output}</b> toks</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-ink/20" />
+                        <span className="font-bold text-ink/75">Cost: ${stepData.cost?.toFixed(6)}</span>
+                      </div>
+                    )}
+
+                    {step.id === 6 && stepData && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-mint font-bold flex items-center gap-0.5">
+                            Passed validation
+                          </span>
+                          {stepData.costSavings?.savedPercent > 0 && (
+                            <span className="px-1.5 py-0.5 bg-mint/10 border border-mint rounded text-mint font-black">
+                              Saved {stepData.costSavings.savedPercent}% vs Sonnet 4.6
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!stepData && stepMsg && (
+                      <div className="text-ink/60">{stepMsg}</div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
 
-      {/* Live trace log message */}
+      {/* Log Feed Console */}
       <AnimatePresence mode="wait">
         {logs.length > 0 && (
           <motion.div
-            key={logs[logs.length - 1]}
+            key={logs[0]}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            className="bg-white border-2 border-ink/10 rounded-xl p-2.5 font-mono text-[9px] font-bold text-ink/80 truncate shadow-[2px_2px_0_#1A1A2E/5]"
+            className="mt-4 bg-ink text-cream border-2 border-ink rounded-xl p-2.5 font-mono text-[9px] font-bold tracking-tight shadow-[2px_2px_0_rgba(0,0,0,0.15)] max-h-[55px] overflow-hidden"
           >
-            <span className="text-iris-purple">LOG:</span> {logs[logs.length - 1]}
+            <span className="text-sunny">$ iris-agent:</span> {logs[0]}
           </motion.div>
         )}
       </AnimatePresence>

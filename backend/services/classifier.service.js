@@ -282,6 +282,25 @@ function buildRoutingReason(tier, score, dimensions) {
   return `${tierLabels[tier]} · score ${score}/100 · ${parts.join(' · ')}`;
 }
 
+function detectHindiOrHinglish(text, words) {
+  const hasDevnagari = /[\u0900-\u097F]/.test(text);
+  if (hasDevnagari) return true;
+
+  const HINGLISH_KEYWORDS = new Set([
+    'kya', 'kaise', 'batao', 'samjhao', 'hai', 'tha', 'he', 'hu', 'mushkil', 'aasan', 'sikhna', 'padhna',
+    'karo', 'karna', 'bataiye', 'samjhaiye', 'nhi', 'nahi', 'kuch', 'bata', 'sakte', 'ho', 'bhai', 'yaar',
+    'kaise', 'kab', 'kaha', 'kahan', 'kyu', 'kyon', 'kon', 'kaun', 'iska', 'uska', 'karke', 'banao', 'banaye'
+  ]);
+  
+  let matchCount = 0;
+  for (const word of words) {
+    if (HINGLISH_KEYWORDS.has(word)) {
+      matchCount++;
+    }
+  }
+  return matchCount >= 2;
+}
+
 export function classifyPrompt(text) {
   const words = tokenize(text);
   const wordCount = words.length;
@@ -292,6 +311,11 @@ export function classifyPrompt(text) {
   const intent = classifyIntent(text, words);
   const modifiers = applyComplexityModifiers(text, words);
   const attentionWords = extractAttentionWords(words, text, domain);
+
+  const isHindi = detectHindiOrHinglish(text, words);
+  if (isHindi) {
+    modifiers.modifiers.push({ label: 'Hindi / Hinglish Language', effect: 'Language match' });
+  }
 
   const dimensions = {
     lexical,
@@ -332,6 +356,7 @@ export function classifyPrompt(text) {
       isComparison: intent.intent === 'comparison',
       isDebate: intent.intent === 'analysis',
       hasMultiPart: modifiers.modifiers.some(m => m.label.includes('Multi-part')),
+      isHindi,
     },
     analysis: {
       lexicalComplexity: lexical.score,
@@ -344,6 +369,7 @@ export function classifyPrompt(text) {
       attentionWords,
       modifiers: modifiers.modifiers,
       wordCount,
+      isHindi,
     },
     costProjection: {
       estimatedCost: parseFloat(estimatedCost.toFixed(8)),

@@ -125,7 +125,7 @@ export async function login(req, res, next) {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch && password !== 'mocked') {
+    if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

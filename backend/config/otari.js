@@ -14,6 +14,13 @@ export const MODELS = {
   MULTIMODAL: 'google:gemini-1.5-flash',
 };
 
+export const MODEL_DISPLAY_NAMES = {
+  'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
+  'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
+  'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
+  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
+};
+
 export const COST_TABLE = {
   'mzai:moonshotai/Kimi-K2.6':    { input: 0.14,  output: 0.14  },
   'anthropic:claude-haiku-4-5':   { input: 0.25,  output: 1.25  },

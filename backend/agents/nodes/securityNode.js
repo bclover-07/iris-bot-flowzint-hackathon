@@ -10,8 +10,9 @@ import { emitRoutingEvent } from '../../services/socket.service.js';
 export async function securityNode(state) {
   const { message, sessionId, userId } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 2,
     status: 'analyzing',
@@ -37,9 +38,18 @@ export async function securityNode(state) {
       cost: 0,
     });
 
-    emitRoutingEvent(trackingId, {
+    emitRoutingEvent(socketRoomId, {
       type: 'injection_blocked',
       message: message.substring(0, 50) + '...',
+      timestamp: new Date().toISOString(),
+    });
+
+    emitRoutingEvent(socketRoomId, {
+      type: 'routing_step',
+      step: 2,
+      status: 'done',
+      message: `PIGuard Firewall: Blocked (Threat detected: ${localInjectionResult.details})`,
+      data: localInjectionResult,
       timestamp: new Date().toISOString(),
     });
 
@@ -51,6 +61,15 @@ export async function securityNode(state) {
   }
 
   const status = localInjectionResult.threatLevel === 'suspicious' ? 'monitor' : 'clean';
+
+  emitRoutingEvent(socketRoomId, {
+    type: 'routing_step',
+    step: 2,
+    status: 'done',
+    message: `PIGuard Firewall: Passed (Threat level: ${status})`,
+    data: localInjectionResult,
+    timestamp: new Date().toISOString()
+  });
 
   return {
     injectionStatus: status,

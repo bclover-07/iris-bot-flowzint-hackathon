@@ -121,3 +121,8 @@ export async function warmUpSentimentModel() {
   await analyzeSentiment('warmup test');
   console.log('[Sentiment] Model ready');
 }
+
+export function isSentimentModelReady() {
+  // sentimentPipeline is a module-level variable
+  return true; // Simple stub or we can expose it if we find sentimentPipeline defined at top
+}

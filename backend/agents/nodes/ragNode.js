@@ -9,8 +9,9 @@ import { emitRoutingEvent } from '../../services/socket.service.js';
 export async function ragNode(state) {
   const { message, sessionId, userId } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 3,
     status: 'analyzing',
@@ -23,15 +24,29 @@ export async function ragNode(state) {
   // 1. Zero-Cost Semantic Caching / RAG
   const ragResult = await searchKnowledgeBase(message);
   if (ragResult && ragResult.score > 0.55) {
+    const isHighConfidence = ragResult.score > 0.85;
     const routing = {
-      model: 'Local KB + LLM',
-      tier: 'enhanced',
-      reason: `Retrieved context from vector knowledge base (Score: ${Math.round(ragResult.score * 100)}%) to feed into LLM`,
+      model: isHighConfidence ? 'Local KB (Direct)' : 'Local KB + LLM',
+      tier: isHighConfidence ? 'cached' : 'enhanced',
+      reason: isHighConfidence 
+        ? `Answered directly from vector knowledge base (High confidence: ${Math.round(ragResult.score * 100)}%)`
+        : `Retrieved context from vector knowledge base (Score: ${Math.round(ragResult.score * 100)}%) to feed into LLM`,
       score: Math.round(ragResult.score * 100),
-      modelDisplayName: 'RAG Pipeline',
+      modelDisplayName: isHighConfidence ? 'Local KB' : 'RAG Pipeline',
       degraded: false,
       budgetMode: budgetStatsBefore.mode,
     };
+
+    emitRoutingEvent(socketRoomId, {
+      type: 'routing_step',
+      step: 3,
+      status: 'done',
+      message: isHighConfidence
+        ? `KB Match: Direct Answer (Score: ${Math.round(ragResult.score * 100)}%)`
+        : `KB Match: Context Retrieved (Score: ${Math.round(ragResult.score * 100)}%)`,
+      data: { source: 'knowledge-base', score: ragResult.score, direct: isHighConfidence },
+      timestamp: new Date().toISOString()
+    });
 
     return {
       retrievedContext: {
@@ -47,7 +62,7 @@ export async function ragNode(state) {
           mode: budgetStatsBefore.mode,
         },
       },
-      // Removed root answer so graph doesn't skip LLM
+      answer: isHighConfidence ? ragResult.answer : undefined,
       trace: ['ragNode']
     };
   }
@@ -55,6 +70,15 @@ export async function ragNode(state) {
   // 2. Query Cache
   const cachedResponse = getCachedResponse(message);
   if (cachedResponse) {
+    emitRoutingEvent(socketRoomId, {
+      type: 'routing_step',
+      step: 3,
+      status: 'done',
+      message: 'Semantic Cache Match: Direct Answer ($0.00)',
+      data: { source: 'cache' },
+      timestamp: new Date().toISOString()
+    });
+
     return {
       retrievedContext: {
         ...cachedResponse,
@@ -72,6 +96,15 @@ export async function ragNode(state) {
       trace: ['ragNode']
     };
   }
+
+  emitRoutingEvent(socketRoomId, {
+    type: 'routing_step',
+    step: 3,
+    status: 'done',
+    message: 'KB Search: No match (Score < 55%)',
+    data: { source: 'miss' },
+    timestamp: new Date().toISOString()
+  });
 
   return {
     trace: ['ragNode']

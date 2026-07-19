@@ -1,46 +1,9 @@
 import { classifyPrompt } from '../../services/classifier.service.js';
 import { getBudgetMode, getDegradedModel, getAllBudgetStats } from '../../services/budget.service.js';
-import { MODELS } from '../../config/otari.js';
+import { MODELS, MODEL_DISPLAY_NAMES } from '../../config/otari.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
 import { searchGrounded } from '../../services/gemini.service.js';
 import { isModelDisabled } from '../../services/otari.service.js';
-
-
-const MODEL_DISPLAY_NAMES = {
-  'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
-  'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
-  'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
-};
-
-async function searchWeb(query) {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    const text = await res.text();
-    const snippetRegex = /<a class="result__snippet[^>]*>(.*?)<\/a>/g;
-    const snippets = [];
-    let match;
-    while ((match = snippetRegex.exec(text)) !== null && snippets.length < 5) {
-      snippets.push(match[1].replace(/<\/?[^>]+(>|$)/g, ""));
-    }
-    
-    if (snippets.length === 0) {
-      return '[SYSTEM: A live web search was attempted but no recent results were found. Please answer the user\'s query based on your existing knowledge base.]';
-    }
-    
-    return snippets.join('\n\n');
-  } catch (e) {
-    return '[SYSTEM: The live web search timed out or failed. Please answer based on your existing knowledge base.]';
-  }
-}
 
 /**
  * Node that determines model routing tier, applies budget fallback policies,
@@ -49,8 +12,9 @@ async function searchWeb(query) {
 export async function toolRouterNode(state) {
   const { message, sessionId, userId, webSearchMode, sentiment } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 4,
     status: 'routing',
@@ -101,7 +65,7 @@ export async function toolRouterNode(state) {
     selectedModel = MODELS.SIMPLE; // Force Mozilla Otari AI
     routingReason = `[WEB SEARCH ENABLED] 🌐 Routed to Mozilla Otari AI (${MODEL_DISPLAY_NAMES[selectedModel]}).`;
     
-    emitRoutingEvent(trackingId, {
+    emitRoutingEvent(socketRoomId, {
       type: 'routing_step',
       step: 4,
       status: 'routing',
@@ -124,11 +88,20 @@ export async function toolRouterNode(state) {
   }
 
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 4,
-    status: 'routing',
-    message: `Routed to ${MODEL_DISPLAY_NAMES[selectedModel]}. ${routingReason}`,
+    status: 'done',
+    message: `Routed to ${MODEL_DISPLAY_NAMES[selectedModel] || selectedModel}`,
+    data: {
+      modelSelected: selectedModel,
+      modelDisplayName: MODEL_DISPLAY_NAMES[selectedModel] || selectedModel,
+      routingReason,
+      classification,
+      budgetMode,
+      degraded,
+      webSearchTriggered: !!webSearchResults
+    },
     timestamp: new Date().toISOString()
   });
 

@@ -7,9 +7,9 @@ import { emitRoutingEvent } from '../../services/socket.service.js';
  */
 export async function sentimentNode(state) {
   const { message, sessionId, userId, chatHistory = [] } = state;
-  const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 1,
     status: 'analyzing',
@@ -35,9 +35,18 @@ export async function sentimentNode(state) {
   };
 
   // Also emit sentiment event to the frontend
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'sentiment_detected',
     sentiment: finalSentiment,
+    timestamp: new Date().toISOString()
+  });
+
+  emitRoutingEvent(socketRoomId, {
+    type: 'routing_step',
+    step: 1,
+    status: 'done',
+    message: `Sentiment: ${finalSentiment.label} (${finalSentiment.emoji}) · Trend: ${finalSentiment.trend}`,
+    data: finalSentiment,
     timestamp: new Date().toISOString()
   });
 

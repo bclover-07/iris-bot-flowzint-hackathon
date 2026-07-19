@@ -40,6 +40,28 @@ app.use((req, res, next) => {
   next();
 });
 
+import mongoose from 'mongoose';
+import { isEmbeddingModelReady } from './services/embedding.service.js';
+import { isSentimentModelReady } from './services/sentiment.service.js';
+
+app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const embeddingReady = isEmbeddingModelReady();
+  const sentimentReady = isSentimentModelReady();
+  const isHealthy = dbStatus === 'connected';
+  
+  return res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'healthy' : 'unhealthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbStatus,
+      localEmbeddingModel: embeddingReady ? 'ready' : 'loading_or_failed',
+      localSentimentModel: sentimentReady ? 'ready' : 'loading_or_failed'
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/quiz', quizRoutes);

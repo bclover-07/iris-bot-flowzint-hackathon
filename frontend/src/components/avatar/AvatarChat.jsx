@@ -404,11 +404,12 @@ export default function AvatarChat() {
     let reply = '';
     let apiResponse = null;
     try {
-      let currentSessionId = 'demo-session-id';
+      let currentSessionId = 'demo-session-id-avatar';
       try {
         const authData = await api.get('/api/auth/me');
         if (authData?.user) {
-          currentSessionId = authData.user._id || authData.user.id;
+          const uid = authData.user._id || authData.user.id;
+          currentSessionId = `${uid}-avatar`;
         }
       } catch (e) {}
 

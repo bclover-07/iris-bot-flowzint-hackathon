@@ -1,13 +1,6 @@
 import { callOtari, callOtariStream } from '../../services/otari.service.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
-import { calculateCost } from '../../config/otari.js';
-
-const MODEL_DISPLAY_NAMES = {
-  'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
-  'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
-  'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
-};
+import { calculateCost, MODEL_DISPLAY_NAMES } from '../../config/otari.js';
 
 /**
  * Node that runs the LLM call using the selected model, system prompt,
@@ -27,8 +20,9 @@ export async function llmNode(state, config = {}) {
     sentiment
   } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_step',
     step: 5,
     status: 'generating',
@@ -48,6 +42,11 @@ Today's date: ${new Date().toLocaleDateString()}.`;
     } else if (sentiment.behavior === 'concise_helpful') {
       baseSystemPrompt += `\n[BEHAVIOR ADAPTATION]: The student is slightly frustrated. Keep your answer brief, direct, and structurally well-organized. Avoid long paragraphs.`;
     }
+  }
+
+  // Language adaptations based on query classification
+  if (classification?.signals?.isHindi) {
+    baseSystemPrompt += `\n[LANGUAGE ADAPTATION]: The student asked in Hindi or Hinglish. Please respond to them in the same language (using standard Hindi script or clear Romanized Hinglish as appropriate) so they can understand better.`;
   }
 
   // Web search integration
@@ -175,6 +174,21 @@ Today's date: ${new Date().toLocaleDateString()}.`;
       };
     }
   }
+
+  emitRoutingEvent(socketRoomId, {
+    type: 'routing_step',
+    step: 5,
+    status: 'done',
+    message: `Generated response from ${MODEL_DISPLAY_NAMES[selectedModel] || selectedModel}`,
+    data: {
+      tokens: {
+        input: otariResult.inputTokens,
+        output: otariResult.outputTokens,
+      },
+      cost: otariResult.cost,
+    },
+    timestamp: new Date().toISOString()
+  });
 
   return {
     answer: otariResult.answer,

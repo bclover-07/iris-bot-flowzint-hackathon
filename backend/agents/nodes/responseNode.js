@@ -4,14 +4,7 @@ import { setCachedResponse } from '../../services/rag.service.js';
 import { SecurityLog } from '../../models/SecurityLog.model.js';
 import { Session } from '../../models/Session.model.js';
 import { emitRoutingEvent } from '../../services/socket.service.js';
-import { MODELS } from '../../config/otari.js';
-
-const MODEL_DISPLAY_NAMES = {
-  'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
-  'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
-  'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
-};
+import { MODELS, MODEL_DISPLAY_NAMES } from '../../config/otari.js';
 
 /**
  * Node that validates the response for prompt leaks (Layer 3), 
@@ -34,6 +27,7 @@ export async function responseNode(state) {
     retrievedContext
   } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
+  const socketRoomId = sessionId || 'demo-session-id';
 
   // If this was answered from RAG or Cache, skip LLM validations and saves
   if (retrievedContext) {
@@ -60,6 +54,15 @@ export async function responseNode(state) {
       confidence: 0.9,
       action: 'blocked',
       cost: 0,
+    });
+
+    emitRoutingEvent(socketRoomId, {
+      type: 'routing_step',
+      step: 6,
+      status: 'done',
+      message: 'Validation: Intercepted (System Prompt Leak Detected)',
+      data: { safe: false },
+      timestamp: new Date().toISOString()
     });
 
     return {
@@ -169,7 +172,7 @@ export async function responseNode(state) {
   }
 
   // Emit dynamic results to frontend
-  emitRoutingEvent(trackingId, {
+  emitRoutingEvent(socketRoomId, {
     type: 'routing_decision',
     ...routing,
     cost,
@@ -179,6 +182,15 @@ export async function responseNode(state) {
       output: outputToks,
     },
     timestamp: new Date().toISOString(),
+  });
+
+  emitRoutingEvent(socketRoomId, {
+    type: 'routing_step',
+    step: 6,
+    status: 'done',
+    message: 'Validation: Passed (No system prompt leaks)',
+    data: { safe: true, costSavings },
+    timestamp: new Date().toISOString()
   });
 
   return {

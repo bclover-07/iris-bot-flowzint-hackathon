@@ -2,42 +2,8 @@ import { graph } from '../agents/graph.js';
 import { getAllBudgetStats } from '../services/budget.service.js';
 import { emitRoutingEvent } from '../services/socket.service.js';
 import { Session } from '../models/Session.model.js';
-
-async function searchWeb(query) {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    const text = await res.text();
-    const snippetRegex = /<a class="result__snippet[^>]*>(.*?)<\/a>/g;
-    const snippets = [];
-    let match;
-    while ((match = snippetRegex.exec(text)) !== null && snippets.length < 5) {
-      snippets.push(match[1].replace(/<\/?[^>]+(>|$)/g, ""));
-    }
-    
-    if (snippets.length === 0) {
-      return '[SYSTEM: A live web search was attempted but no recent results were found. Please answer the user\'s query based on your existing knowledge base.]';
-    }
-    
-    return snippets.join('\n\n');
-  } catch (e) {
-    return '[SYSTEM: The live web search timed out or failed. Please answer based on your existing knowledge base.]';
-  }
-}
-
-const MODEL_DISPLAY_NAMES = {
-  'mzai:moonshotai/Kimi-K2.6': 'Kimi K2.6',
-  'anthropic:claude-haiku-4-5': 'Claude Haiku 4.5',
-  'anthropic:claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'google:gemini-1.5-flash': 'Gemini 1.5 Flash',
-};
+import { MODEL_DISPLAY_NAMES } from '../config/otari.js';
+import { callOtari } from '../services/otari.service.js';
 
 export async function handleAIChat(req, res, next) {
   try {
@@ -108,7 +74,7 @@ export async function handleAIChat(req, res, next) {
     };
 
     // Emit final step via WebSocket
-    emitRoutingEvent(trackingId, {
+    emitRoutingEvent(sessionId || 'demo-session-id', {
       type: 'routing_step',
       step: 6,
       status: 'done',
@@ -229,5 +195,49 @@ export async function handleAIChatStream(req, res, next) {
     console.error('Stream error:', err);
     res.write(`data: ${JSON.stringify({ error: 'server_error', message: err.message })}\n\n`);
     res.end();
+  }
+}
+
+export async function getSessionSummary(req, res, next) {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId || !sessionId) {
+      return res.status(400).json({ error: 'Missing userId or sessionId' });
+    }
+
+    const session = await Session.findOne({ sessionId, userId });
+    if (!session || !session.messages || session.messages.length === 0) {
+      return res.json({ summary: "No active conversation history found to summarize." });
+    }
+
+    const formattedDialogue = session.messages
+      .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+      .join('\n\n');
+
+    const prompt = `You are a learning mentor. Summarize the following educational study chat session between a student (USER) and an AI tutor (ASSISTANT).
+Provide a structured, encouraging study recap in Markdown format with:
+1. 🎯 Topics Explored
+2. 💡 Key Concepts & Takeaways (definitions, core ideas discussed)
+3. 📈 Student Progress (assess how they did based on their questions/sentiment)
+4. 🚀 Next Steps (2-3 follow-up study topics)
+
+Keep it concise and highly actionable for the student.
+
+Chat Transcript:
+${formattedDialogue}`;
+
+    const summaryResult = await callOtari({
+      model: 'mzai:moonshotai/Kimi-K2.6',
+      messages: [{ role: 'user', content: prompt }],
+      guardrailMode: 'monitor',
+      sessionId: `${sessionId}-summary`
+    });
+
+    return res.json({ summary: summaryResult.answer });
+  } catch (err) {
+    console.error('Failed to generate session summary:', err);
+    next(err);
   }
 }

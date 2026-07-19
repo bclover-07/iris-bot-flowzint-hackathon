@@ -23,7 +23,7 @@ export default function DashboardPage() {
       setUser(data.user);
       const sid = data.user?._id || data.user?.id;
       if (sid) {
-        api.get(`/api/ai/history/${sid}`)
+        api.get(`/api/ai/history/${sid}-dashboard`)
           .then(res => {
             if (res.messages && res.messages.length > 0) {
               setMessages(res.messages);
@@ -35,7 +35,7 @@ export default function DashboardPage() {
   }, []);
 
   // Personalized session for budget/routing isolation
-  const sessionId = user?._id || user?.id || 'demo-session-id';
+  const sessionId = user?._id || user?.id ? `${user._id || user.id}-dashboard` : 'demo-session-id-dashboard';
   const { socket, routingEvents, isConnected, clearEvents } = useSocket(sessionId);
   const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
 
@@ -74,12 +74,15 @@ export default function DashboardPage() {
       const decoder = new TextDecoder('utf-8');
 
       let accumulatedAnswer = '';
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunkText = decoder.decode(value, { stream: true });
-        const lines = chunkText.split('\n');
+        buffer += chunkText;
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // Save incomplete line for next iteration
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -141,6 +144,30 @@ export default function DashboardPage() {
     }
   };
 
+  const handleGenerateSummary = async () => {
+    if (messages.length === 0) return;
+    setIsLoading(true);
+    try {
+      const data = await api.get(`/api/ai/summary/${sessionId}`);
+      const recapMessage = {
+        role: 'assistant',
+        content: data.summary || "No active history to summarize.",
+        id: Date.now(),
+        routing: {
+          modelDisplayName: 'System Mentor',
+          tier: 'cached',
+          reason: 'Study session recap generated locally using Kimi K2.6.'
+        }
+      };
+      setMessages(prev => [...prev, recapMessage]);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate study recap: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
   const currentStep = latestStepEvent ? latestStepEvent.step : 0;
   const graphStatus = latestStepEvent ? latestStepEvent.status : 'idle';
@@ -160,6 +187,15 @@ export default function DashboardPage() {
            <div className="flex items-center gap-2">
              <h2 className="font-black text-xs md:text-sm uppercase tracking-widest text-ink">IRIS Bot Assistant</h2>
            </div>
+           {messages.length > 0 && (
+             <button 
+               onClick={handleGenerateSummary}
+               disabled={isLoading}
+               className="text-[10px] md:text-xs font-black uppercase tracking-widest px-3 py-1 bg-sunny border-2 border-ink rounded-full shadow-[2px_2px_0_#1A1A2E] hover:translate-y-px hover:shadow-[1px_1px_0_#1A1A2E] transition-all disabled:opacity-50"
+             >
+               Recap Session
+             </button>
+           )}
          </div>
          <ChatWindow messages={messages} isLoading={isLoading} />
         <ChatInput 
@@ -186,7 +222,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mb-4 shrink-0">
-            <AgentThinkingGraph currentStep={currentStep} status={graphStatus} logs={graphLogs} />
+            <AgentThinkingGraph events={routingEvents} currentStep={currentStep} status={graphStatus} logs={graphLogs} />
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">

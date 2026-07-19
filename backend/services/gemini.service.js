@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { otariClient } from '../config/otari.js';
 dotenv.config();
 
 let geminiClient = null;
@@ -9,7 +10,7 @@ function getGeminiClient() {
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    console.warn('[Gemini] GEMINI_API_KEY is not configured. Gemini features will run in fallback simulation mode.');
+    console.warn('[Gemini] GEMINI_API_KEY is not configured. Gemini features will run in fallback simulation/Otari mode.');
     return null;
   }
 
@@ -18,6 +19,32 @@ function getGeminiClient() {
     return geminiClient;
   } catch (err) {
     console.error('[Gemini] Failed to initialize GoogleGenAI client:', err.message);
+    return null;
+  }
+}
+
+async function fallbackSearchWeb(query) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    const text = await res.text();
+    const snippetRegex = /<a class="result__snippet[^>]*>(.*?)<\/a>/g;
+    const snippets = [];
+    let match;
+    while ((match = snippetRegex.exec(text)) !== null && snippets.length < 5) {
+      snippets.push(match[1].replace(/<\/?[^>]+(>|$)/g, ""));
+    }
+    
+    return snippets.length > 0 ? snippets.join('\n\n') : null;
+  } catch (e) {
+    console.warn('[Gemini Fallback Search] DDG search failed:', e.message);
     return null;
   }
 }
@@ -57,35 +84,61 @@ function getMockSearchGrounding(prompt) {
 export async function analyzeImage(imageBuffer, mimeType, prompt = 'Describe this image in detail.') {
   const client = getGeminiClient();
   
-  if (!client) {
-    console.log('[Gemini SDK] API key not found. Simulating image analysis...');
-    await new Promise(r => setTimeout(r, 1000));
-    return getMockImageAnalysis(mimeType, imageBuffer.length, prompt);
-  }
-
-  for (const model of GEMINI_FALLBACK_MODELS) {
-    try {
-      console.log(`[Gemini SDK] Trying analyzeImage with model: ${model}`);
-      const response = await client.models.generateContent({
-        model,
-        contents: [
-          prompt,
-          {
-            inlineData: {
-              data: imageBuffer.toString('base64'),
-              mimeType,
+  if (client) {
+    for (const model of GEMINI_FALLBACK_MODELS) {
+      try {
+        console.log(`[Gemini SDK] Trying analyzeImage with model: ${model}`);
+        const response = await client.models.generateContent({
+          model,
+          contents: [
+            prompt,
+            {
+              inlineData: {
+                data: imageBuffer.toString('base64'),
+                mimeType,
+              },
             },
-          },
-        ],
-      });
-      console.log(`[Gemini SDK] Success using model: ${model}`);
-      return response.text;
-    } catch (err) {
-      console.warn(`[Gemini Vision Fallback] Model ${model} failed:`, err.message);
+          ],
+        });
+        console.log(`[Gemini SDK] Success using model: ${model}`);
+        return response.text;
+      } catch (err) {
+        console.warn(`[Gemini Vision Fallback] Model ${model} failed:`, err.message);
+      }
     }
   }
 
-  console.error('[Gemini Vision] All models in fallback chain failed. Returning simulated output.');
+  // Fallback to Otari Multimodal Google Gemini model
+  try {
+    console.log(`[Gemini Fallback] Attempting multimodal vision analysis via Otari Gateway (model: google:gemini-1.5-flash)...`);
+    const base64Image = imageBuffer.toString('base64');
+    const response = await otariClient.chat.completions.create({
+      model: 'google:gemini-1.5-flash',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ]
+    });
+    const answer = response.choices?.[0]?.message?.content;
+    if (answer) {
+      console.log(`[Gemini Fallback] Multimodal vision analysis via Otari succeeded.`);
+      return answer;
+    }
+  } catch (otariErr) {
+    console.error('[Gemini Fallback] Multimodal vision analysis via Otari failed:', otariErr.message);
+  }
+
+  console.warn('[Gemini Vision] Otari multimodal fallback failed. Returning simulated output.');
   return getMockImageAnalysis(mimeType, imageBuffer.length, prompt);
 }
 
@@ -98,30 +151,52 @@ export async function analyzeImage(imageBuffer, mimeType, prompt = 'Describe thi
 export async function searchGrounded(prompt) {
   const client = getGeminiClient();
 
-  if (!client) {
-    console.log('[Gemini SDK] API key not found. Simulating search grounding...');
-    await new Promise(r => setTimeout(r, 1000));
-    return getMockSearchGrounding(prompt);
-  }
-
-  for (const model of GEMINI_FALLBACK_MODELS) {
-    try {
-      console.log(`[Gemini SDK] Trying searchGrounded with model: ${model}`);
-      const response = await client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          // Enable search grounding
-          googleSearchSpec: {},
-        },
-      });
-      console.log(`[Gemini SDK] Success using model: ${model}`);
-      return response.text;
-    } catch (err) {
-      console.warn(`[Gemini Grounding Fallback] Model ${model} failed:`, err.message);
+  if (client) {
+    for (const model of GEMINI_FALLBACK_MODELS) {
+      try {
+        console.log(`[Gemini SDK] Trying searchGrounded with model: ${model}`);
+        const response = await client.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            // Enable search grounding
+            googleSearchSpec: {},
+          },
+        });
+        console.log(`[Gemini SDK] Success using model: ${model}`);
+        return response.text;
+      } catch (err) {
+        console.warn(`[Gemini Grounding Fallback] Model ${model} failed:`, err.message);
+      }
     }
   }
 
-  console.error('[Gemini Grounded Search] All models in fallback chain failed. Returning simulated output.');
+  // Fallback to Scraped Web Search + Otari synthesis
+  try {
+    console.log(`[Gemini Fallback] Attempting programmatic search & Otari synthesis...`);
+    const searchResults = await fallbackSearchWeb(prompt);
+    if (searchResults) {
+      console.log(`[Gemini Fallback] Programmatic search retrieved results. Synthesizing via Otari...`);
+      const response = await otariClient.chat.completions.create({
+        model: 'mzai:moonshotai/Kimi-K2.6',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an AI assistant with access to real-time search results. Answer the query based on the following web results:
+\n\n${searchResults}\n\nBe concise and accurate.`
+          },
+          { role: 'user', content: prompt }
+        ]
+      });
+      const answer = response.choices?.[0]?.message?.content;
+      if (answer) {
+        return answer;
+      }
+    }
+  } catch (otariErr) {
+    console.error('[Gemini Fallback Search] Programmatic search + Otari synthesis failed:', otariErr.message);
+  }
+
+  console.warn('[Gemini Grounded Search] Fallback search failed. Returning simulated output.');
   return getMockSearchGrounding(prompt);
 }

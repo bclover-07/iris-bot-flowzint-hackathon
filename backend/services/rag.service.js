@@ -50,6 +50,36 @@ async function vectorSearch(query, topK = 3) {
   const queryEmbedding = await generateEmbedding(query);
   if (!queryEmbedding || queryEmbedding.length === 0) return [];
 
+  // 1. Try proper MongoDB Atlas Vector Search first
+  try {
+    const atlasResults = await KnowledgeBase.aggregate([
+      {
+        $vectorSearch: {
+          index: "vector_index", // standard vector index name
+          path: "embedding",
+          queryVector: queryEmbedding,
+          numCandidates: 50,
+          limit: topK
+        }
+      },
+      {
+        $project: {
+          question: 1,
+          answer: 1,
+          category: 1,
+          score: { $meta: "vectorSearchScore" }
+        }
+      }
+    ]);
+    if (atlasResults && atlasResults.length > 0) {
+      console.log(`[RAG] Atlas Vector Search matched ${atlasResults.length} docs`);
+      return atlasResults;
+    }
+  } catch (atlasErr) {
+    console.warn('[RAG] Atlas Vector Search failed or index not found. Falling back to local cosine similarity calculation:', atlasErr.message);
+  }
+
+  // 2. Fallback to in-memory brute force cosine similarity search
   const allDocs = await KnowledgeBase.find({ embedding: { $exists: true, $ne: [] } }).lean();
   if (allDocs.length === 0) return [];
 

@@ -99,3 +99,7 @@ export async function warmUpEmbeddingModel() {
   await generateEmbedding('warmup');
   console.log('[Embedding] Model ready');
 }
+
+export function isEmbeddingModelReady() {
+  return embeddingPipeline !== null;
+}
