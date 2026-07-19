@@ -143,6 +143,36 @@ export function DashboardProvider({ children }) {
         }
       }
     } catch (err) {
+      console.warn('[DashboardContext] Stream fetch failed, executing fallback POST /api/ai/chat...', err.message);
+      try {
+        const fallbackData = await api.post('/api/ai/chat', {
+          message: text,
+          sessionId,
+          socraticMode: socratic,
+          webSearchMode: webSearch
+        });
+
+        if (fallbackData && fallbackData.answer) {
+          setMessages(prev => prev.map(m => m.id === tempId ? {
+            ...m,
+            content: fallbackData.answer,
+            isStreaming: false,
+            tier: fallbackData.routing?.tier,
+            model: fallbackData.routing?.modelDisplayName || fallbackData.routing?.model,
+            routing: fallbackData.routing,
+            cost: fallbackData.cost,
+            costSavings: fallbackData.costSavings,
+            tokens: fallbackData.tokens,
+            injectionStatus: fallbackData.injectionStatus,
+            sentiment: fallbackData.sentiment
+          } : m));
+          fetchStats();
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('[DashboardContext] POST fallback also failed:', fallbackErr.message);
+      }
+
       setMessages(prev => prev.map(m => m.id === tempId ? {
         ...m,
         content: err.message || 'An error occurred while connecting to IRIS Bot.',
