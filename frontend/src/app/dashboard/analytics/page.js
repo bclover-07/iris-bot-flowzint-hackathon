@@ -85,7 +85,7 @@ export default function AnalyticsDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase font-black text-ink/60">Budget Remaining</span>
-            <span className="text-4xl font-black text-ink">${data.budget.remaining.toFixed(3)}</span>
+            <span className="text-4xl font-black text-ink">${data.budget.remaining.toFixed(4)}</span>
             <span className="text-xs font-bold text-ink/70">out of ${data.budget.total.toFixed(2)}</span>
           </div>
 
@@ -96,9 +96,9 @@ export default function AnalyticsDashboard() {
           </div>
 
           <div className="flex flex-col gap-1 bg-cream border-2 border-ink p-4 rounded-xl shadow-[4px_4px_0_#1A1A2E]">
-            <span className="text-xs uppercase font-black text-ink/60">Budget Remaining</span>
-            <span className="text-4xl font-black text-coral">${data.budget.remaining.toFixed(4)}</span>
-            <span className="text-sm font-black text-ink/50 mt-1">≈ {remainingQueries} queries left</span>
+            <span className="text-xs uppercase font-black text-ink/60">Est. Queries Left</span>
+            <span className="text-4xl font-black text-coral">{remainingQueries}</span>
+            <span className="text-sm font-black text-ink/50 mt-1">based on remaining budget</span>
             <span className="text-xs font-bold text-ink/70">at ${avgCostPerQuery.toFixed(4)} avg/query</span>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function AnalyticsDashboard() {
         {/* Progress Bar */}
         <div className="mt-6">
           <div className="flex justify-between text-xs font-black uppercase tracking-widest text-ink mb-2">
-            <span>Spent: ${data.budget.spent.toFixed(3)}</span>
+            <span>Spent: ${data.budget.spent.toFixed(4)}</span>
             <span>{data.budget.percentUsed.toFixed(1)}% Used</span>
           </div>
           <div className="w-full h-6 bg-cream border-[3px] border-ink rounded-full overflow-hidden flex shadow-[inset_2px_2px_0_rgba(0,0,0,0.1)]">
