@@ -95,7 +95,7 @@ export default function LiveRoutingFeed({ events }) {
               <div className="pl-3">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs font-black uppercase text-ink/50 tracking-widest">
-                    {new Date(event.timestamp).toLocaleTimeString()}
+                    {event.timestamp ? (() => { const d = new Date(event.timestamp); return isNaN(d.getTime()) ? 'Just now' : d.toLocaleTimeString(); })() : 'Just now'}
                   </span>
                   <span className="font-mono font-bold text-[10px] bg-cream border-[2px] border-ink px-2 py-0.5 rounded-full text-ink">
                     ${Number(event.cost?.thisCallFormatted?.replace('$', '') || event.cost || 0).toFixed(4)}

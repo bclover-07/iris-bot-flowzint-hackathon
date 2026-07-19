@@ -69,9 +69,8 @@ export async function verifyOTP(req, res, next) {
     const user = await User.findById(userId);
 
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (user.isVerified) return res.status(400).json({ error: 'Already verified' });
     if (user.otp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
-    if (new Date() > user.otpExpiry) return res.status(400).json({ error: 'OTP expired. Request a new one.' });
+    if (user.otpExpiry && new Date() > user.otpExpiry) return res.status(400).json({ error: 'OTP expired. Request a new one.' });
 
     user.isVerified = true;
     user.otp = undefined;
@@ -95,7 +94,7 @@ export async function resendOTP(req, res, next) {
   try {
     const { userId } = req.body;
     const user = await User.findById(userId);
-    if (!user || user.isVerified) return res.status(400).json({ error: 'Invalid request' });
+    if (!user) return res.status(400).json({ error: 'Invalid request' });
 
     const otp = generateOTP();
     user.otp = otp;
@@ -103,10 +102,10 @@ export async function resendOTP(req, res, next) {
     await user.save();
 
     try {
-      console.log(`\n\n🎯 HACKATHON DEV MODE: Resent OTP for ${user.email} is ${otp}\n\n`);
+      console.log(`\n\n🎯 Resent OTP for ${user.email} is ${otp}\n\n`);
       await sendOTPEmail(user.email, user.name, otp);
     } catch (emailErr) {
-      console.error('Email sending failed:', emailErr.message);
+      console.error('[Nodemailer] Email sending failed:', emailErr.message);
     }
 
     return res.json({ message: 'OTP resent successfully' });
@@ -134,8 +133,13 @@ export async function login(req, res, next) {
       user.otp = otp;
       user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
       await user.save();
-      console.log(`\n\n🎯 HACKATHON DEV MODE: Verification OTP for ${email} is ${otp}\n\n`);
-      return res.status(403).json({ error: 'Please verify your email first', userId: user._id });
+      try {
+        console.log(`\n\n🎯 Verification OTP for ${email} is ${otp}\n\n`);
+        await sendOTPEmail(email, user.name, otp);
+      } catch (emailErr) {
+        console.error('[Nodemailer] Email sending failed:', emailErr.message);
+      }
+      return res.status(403).json({ error: 'Please verify your email first. A verification OTP has been sent.', userId: user._id });
     }
 
     const token = createToken(user._id);

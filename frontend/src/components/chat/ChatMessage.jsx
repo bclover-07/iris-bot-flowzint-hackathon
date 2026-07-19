@@ -55,6 +55,12 @@ export default function ChatMessage({ message }) {
     return null;
   }
 
+  const routingObj = message.routing || (message.model || message.tier ? {
+    tier: message.tier || 'simple',
+    modelDisplayName: message.model || message.tier || 'Kimi K2.6',
+    reason: 'Answered via Intelligent Routing'
+  } : null);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -104,12 +110,12 @@ export default function ChatMessage({ message }) {
             )}
           </div>
 
-          {!isUser && message.routing && (
+          {!isUser && routingObj && (
             <div className="mt-6 pt-5 border-t-[3px] border-ink/10 flex flex-col gap-3">
-              <RoutingChip routing={message.routing} cost={message.cost} costSavings={message.costSavings} tokens={message.tokens} />
-              {message.routing.reason && (
+              <RoutingChip routing={routingObj} cost={message.cost} costSavings={message.costSavings} tokens={message.tokens} />
+              {routingObj.reason && (
                 <p className="text-xs font-mono font-bold text-ink/70 mt-3 bg-white p-3 border-[3px] border-ink/20 rounded-xl">
-                  <span className="text-ink">ROUTING_REASON:</span> {message.routing.reason}
+                  <span className="text-ink">ROUTING_REASON:</span> {routingObj.reason}
                 </p>
               )}
             </div>

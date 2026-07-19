@@ -29,13 +29,19 @@ export default function AnalyticsDashboard() {
     return <div className="animate-pulse p-6 bg-brutal-card h-full border-2 border-brutal-border">Loading Analytics...</div>;
   }
 
-  if (!data) return <div>Failed to load analytics.</div>;
+  const safeData = data || {
+    summary: { totalCalls: 0, totalCost: 0, savedCost: 0, savingsPercent: 0 },
+    budget: { remaining: 2.0, total: 2.0, spent: 0, percentUsed: 0, mode: 'normal' },
+    modelDistribution: {},
+    complexityBuckets: { simple: 0, medium: 0, complex: 0 },
+    recentHistory: [],
+  };
 
-  const modelData = Object.entries(data.modelDistribution).map(([name, value]) => ({ name: name.split('/')[1] || name, value }));
+  const modelData = Object.entries(safeData.modelDistribution || {}).map(([name, value]) => ({ name: name.split('/')[1] || name, value }));
   const complexityData = [
-    { name: 'Simple', value: data.complexityBuckets.simple },
-    { name: 'Medium', value: data.complexityBuckets.medium },
-    { name: 'Complex', value: data.complexityBuckets.complex },
+    { name: 'Simple', value: safeData.complexityBuckets?.simple || 0 },
+    { name: 'Medium', value: safeData.complexityBuckets?.medium || 0 },
+    { name: 'Complex', value: safeData.complexityBuckets?.complex || 0 },
   ].filter(d => d.value > 0);
 
   const sentimentScoreMap = {
@@ -48,12 +54,12 @@ export default function AnalyticsDashboard() {
   };
 
   let cumulativeSaved = 0;
-  const historyChartData = [...data.recentHistory].reverse().map((h, i) => {
+  const historyChartData = (safeData.recentHistory || []).slice().reverse().map((h, i) => {
     cumulativeSaved += (h.costSavings?.saved || 0);
     const scoreVal = h.sentiment && h.sentiment.label ? sentimentScoreMap[h.sentiment.label] : 2;
     return {
       name: `Q${i + 1}`,
-      cost: h.cost,
+      cost: h.cost || 0,
       saved: h.costSavings?.saved || 0,
       cumulativeSaved: parseFloat(cumulativeSaved.toFixed(5)),
       sentimentVal: scoreVal,
@@ -61,8 +67,8 @@ export default function AnalyticsDashboard() {
     };
   });
 
-  const avgCostPerQuery = data.summary.totalCalls > 0 ? data.summary.totalCost / data.summary.totalCalls : 0;
-  const remainingQueries = avgCostPerQuery > 0 ? Math.floor(data.budget.remaining / avgCostPerQuery) : '∞';
+  const avgCostPerQuery = safeData.summary.totalCalls > 0 ? safeData.summary.totalCost / safeData.summary.totalCalls : 0;
+  const remainingQueries = avgCostPerQuery > 0 ? Math.floor(safeData.budget.remaining / avgCostPerQuery) : '∞';
 
 
   return (
@@ -77,22 +83,22 @@ export default function AnalyticsDashboard() {
       <div className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-black uppercase tracking-widest text-ink border-b-4 border-ink pb-2 inline-block">Budget Forecast</h3>
-          <span className={`px-3 py-1 font-black text-xs uppercase border-2 border-ink rounded-lg shadow-[2px_2px_0_#1A1A2E] ${data.budget.mode === 'degraded' ? 'bg-coral text-white' : 'bg-mint text-ink'}`}>
-            {data.budget.mode === 'degraded' ? 'DEGRADED MODE' : 'NORMAL MODE'}
+          <span className={`px-3 py-1 font-black text-xs uppercase border-2 border-ink rounded-lg shadow-[2px_2px_0_#1A1A2E] ${safeData.budget?.mode === 'degraded' ? 'bg-coral text-white' : 'bg-mint text-ink'}`}>
+            {safeData.budget?.mode === 'degraded' ? 'DEGRADED MODE' : 'NORMAL MODE'}
           </span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase font-black text-ink/60">Budget Remaining</span>
-            <span className="text-4xl font-black text-ink">${data.budget.remaining.toFixed(4)}</span>
-            <span className="text-xs font-bold text-ink/70">out of ${data.budget.total.toFixed(2)}</span>
+            <span className="text-4xl font-black text-ink">${Number(safeData.budget?.remaining || 2.0).toFixed(4)}</span>
+            <span className="text-xs font-bold text-ink/70">out of ${Number(safeData.budget?.total || 2.0).toFixed(2)}</span>
           </div>
 
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase font-black text-ink/60">Avg Cost / Query</span>
             <span className="text-4xl font-black text-ink">${avgCostPerQuery.toFixed(4)}</span>
-            <span className="text-xs font-bold text-ink/70">across {data.summary.totalCalls} queries</span>
+            <span className="text-xs font-bold text-ink/70">across {safeData.summary?.totalCalls || 0} queries</span>
           </div>
 
           <div className="flex flex-col gap-1 bg-cream border-2 border-ink p-4 rounded-xl shadow-[4px_4px_0_#1A1A2E]">
@@ -106,13 +112,13 @@ export default function AnalyticsDashboard() {
         {/* Progress Bar */}
         <div className="mt-6">
           <div className="flex justify-between text-xs font-black uppercase tracking-widest text-ink mb-2">
-            <span>Spent: ${data.budget.spent.toFixed(4)}</span>
-            <span>{data.budget.percentUsed.toFixed(1)}% Used</span>
+            <span>Spent: ${Number(safeData.budget?.spent || 0).toFixed(4)}</span>
+            <span>{Number(safeData.budget?.percentUsed || 0).toFixed(1)}% Used</span>
           </div>
           <div className="w-full h-6 bg-cream border-[3px] border-ink rounded-full overflow-hidden flex shadow-[inset_2px_2px_0_rgba(0,0,0,0.1)]">
             <div 
-              className={`h-full border-r-[3px] border-ink transition-all duration-1000 ${data.budget.percentUsed > 80 ? 'bg-coral' : 'bg-mint'}`} 
-              style={{ width: `${Math.min(100, data.budget.percentUsed)}%` }}
+              className={`h-full border-r-[3px] border-ink transition-all duration-1000 ${(safeData.budget?.percentUsed || 0) > 80 ? 'bg-coral' : 'bg-mint'}`} 
+              style={{ width: `${Math.min(100, safeData.budget?.percentUsed || 0)}%` }}
             ></div>
           </div>
         </div>
@@ -128,7 +134,7 @@ export default function AnalyticsDashboard() {
             <RiRoute className="w-5 h-5 text-ink group-hover:scale-110 transition-transform" />
             <span className="text-xs uppercase font-black tracking-widest text-ink">Total Queries</span>
           </div>
-          <span className="text-4xl font-black text-ink z-10 mt-2">{data.summary.totalCalls}</span>
+          <span className="text-4xl font-black text-ink z-10 mt-2">{safeData.summary?.totalCalls || 0}</span>
         </div>
         
         <div className="bg-sunny border-[4px] border-ink shadow-[4px_4px_0_#1A1A2E] rounded-2xl p-5 flex flex-col gap-2 relative overflow-hidden">
@@ -136,7 +142,7 @@ export default function AnalyticsDashboard() {
             <RiMoney className="w-5 h-5 text-ink" />
             <span className="text-xs uppercase font-black tracking-widest text-ink">Actual Cost</span>
           </div>
-          <span className="text-4xl font-black text-ink z-10 mt-2">${data.summary.totalCost.toFixed(4)}</span>
+          <span className="text-4xl font-black text-ink z-10 mt-2">${Number(safeData.summary?.totalCost || 0).toFixed(4)}</span>
         </div>
 
         <div className="bg-mint border-[4px] border-ink shadow-[4px_4px_0_#1A1A2E] rounded-2xl p-5 flex flex-col gap-2 lg:col-span-2 relative overflow-hidden">
@@ -145,9 +151,9 @@ export default function AnalyticsDashboard() {
             <span className="text-xs uppercase font-black tracking-widest text-ink">IRIS Bot Saved You</span>
           </div>
           <div className="flex items-end gap-3 z-10 mt-1">
-            <span className="text-4xl font-black text-ink">${data.summary.savedCost.toFixed(4)}</span>
+            <span className="text-4xl font-black text-ink">${Number(safeData.summary?.savedCost || 0).toFixed(4)}</span>
             <span className="text-sm font-black text-white bg-ink px-3 py-1 rounded-full mb-1 border-2 border-white shadow-[2px_2px_0_#1A1A2E]">
-              {data.summary.savingsPercent}% savings
+              {safeData.summary?.savingsPercent || 0}% savings
             </span>
           </div>
           <p className="text-xs font-bold text-ink/80 mt-2 z-10">Compared to routing all queries to Claude Sonnet 4.6</p>
@@ -271,8 +277,8 @@ export default function AnalyticsDashboard() {
       <div id="history-section" className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6 mt-6">
         <h3 className="text-sm font-black uppercase tracking-widest text-ink border-b-4 border-ink pb-2 mb-6 inline-block">Deep Analysis: Recent Queries</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.recentHistory.length > 0 ? (
-            data.recentHistory.slice(0, 6).map((query, i) => (
+          {(safeData.recentHistory || []).length > 0 ? (
+            safeData.recentHistory.slice(0, 6).map((query, i) => (
               <div 
                 key={query.id || i} 
                 onClick={() => setSelectedQuery(query)}
@@ -286,7 +292,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <p className="font-bold text-ink text-sm line-clamp-2 mb-3">&quot;{query.query || 'View details...'}&quot;</p>
                 <div className="flex justify-between items-center text-xs font-bold text-ink/60 border-t-2 border-ink/10 pt-2">
-                  <span>{new Date(query.timestamp).toLocaleTimeString()}</span>
+                  <span>{query.timestamp ? new Date(query.timestamp).toLocaleTimeString() : 'Just now'}</span>
                   <span className="bg-white px-2 py-0.5 rounded border-2 border-ink text-ink font-black">${Number(query.cost || 0).toFixed(4)}</span>
                 </div>
               </div>
@@ -300,7 +306,7 @@ export default function AnalyticsDashboard() {
       {/* All History Modal */}
       {showAllHistory && (
         <AllHistoryModal 
-          history={data.recentHistory} 
+          history={safeData.recentHistory || []} 
           onClose={() => setShowAllHistory(false)} 
           onSelectQuery={(query) => {
             setSelectedQuery(query);

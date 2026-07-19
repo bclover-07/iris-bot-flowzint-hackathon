@@ -5,16 +5,18 @@ export default function RoutingChip({ routing, cost, costSavings, tokens }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
-  if (!routing || !routing.tier) return null;
+  if (!routing) return null;
 
-  const tierColors = {
-    'Haiku 4.5': 'bg-sunny',
-    'Sonnet 4.6': 'bg-coral',
-    'Kimi K2.6': 'bg-mint',
-    'Local KB': 'bg-sky'
+  const getTierBg = (name, tier) => {
+    const str = `${name || ''} ${tier || ''}`;
+    if (str.includes('Haiku') || str.includes('simple')) return 'bg-sunny';
+    if (str.includes('Sonnet') || str.includes('complex')) return 'bg-coral';
+    if (str.includes('Kimi') || str.includes('medium')) return 'bg-mint';
+    if (str.includes('KB') || str.includes('RAG') || str.includes('cached')) return 'bg-sky';
+    return 'bg-mint';
   };
 
-  const bg = tierColors[routing.modelDisplayName] || 'bg-white';
+  const bg = getTierBg(routing.modelDisplayName || routing.model, routing.tier);
 
   return (
     <div className="flex flex-col gap-2 relative">

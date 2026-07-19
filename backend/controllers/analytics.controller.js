@@ -1,40 +1,41 @@
 import { Session } from '../models/Session.model.js';
 import { SecurityLog } from '../models/SecurityLog.model.js';
-import { BudgetTracker } from '../models/BudgetTracker.model.js';
 import { getAllBudgetStats } from '../services/budget.service.js';
 
 export async function getAnalyticsDashboard(req, res, next) {
   try {
-    const userId = req.user.id || req.user._id;
-    const trackingId = userId ? userId.toString() : (req.query.sessionId || 'demo-session-id');
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const trackingId = userId.toString();
 
     // 1. Get Budget Tracker for the user
     const budgetStats = await getAllBudgetStats(trackingId);
     
     // Fetch rich history from ALL Session models for this user
-    const allSessions = await Session.find({ userId: userId }).sort({ createdAt: -1 });
+    const allSessions = await Session.find({ userId }).sort({ createdAt: -1 });
     let richHistory = [];
     
     allSessions.forEach(session => {
-      if (session && session.messages) {
-        // Filter for assistant messages which have routing info
+      if (session && Array.isArray(session.messages)) {
         const sessionHistory = session.messages
-          .filter(m => m.role === 'assistant' && m.routing)
+          .filter(m => m && m.role === 'assistant' && m.routing)
           .map(m => {
-            // Find corresponding user message
             const userMsg = session.messages[session.messages.indexOf(m) - 1];
             return {
               id: m._id,
-              timestamp: m.timestamp,
+              timestamp: m.timestamp || session.createdAt || new Date().toISOString(),
               query: userMsg ? userMsg.content : 'Unknown Query',
-              model: m.routing.model,
-              tier: m.routing.tier,
-              cost: m.cost,
-              costSavings: m.costSavings,
-              tokens: m.tokens,
-              latencyMs: m.latencyMs,
-              routingReason: m.routing.reason,
-              analysisBreakdown: m.routing.analysisBreakdown,
+              model: m.routing?.modelDisplayName || m.routing?.model || 'Kimi K2.6',
+              tier: m.routing?.tier || 'simple',
+              cost: Number(m.cost || 0),
+              costSavings: m.costSavings || { actualCost: Number(m.cost || 0), worstCaseCost: 0, saved: 0, savedPercent: 0 },
+              tokens: m.tokens || { input: 0, output: 0 },
+              latencyMs: m.latencyMs || 0,
+              routingReason: m.routing?.reason || 'Direct processing',
+              analysisBreakdown: m.routing?.analysisBreakdown || null,
               sentiment: m.sentiment || null,
             };
           });
@@ -42,8 +43,8 @@ export async function getAnalyticsDashboard(req, res, next) {
       }
     });
 
-    // Sort richHistory by timestamp descending
-    richHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Sort richHistory by timestamp descending safely
+    richHistory.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
     // 2. Aggregate Model Usage & Savings from ALL-TIME richHistory
     const modelDistribution = {};
@@ -51,10 +52,16 @@ export async function getAnalyticsDashboard(req, res, next) {
     let worstCaseCost = 0;
 
     richHistory.forEach(h => {
-      modelDistribution[h.model] = (modelDistribution[h.model] || 0) + 1;
-      totalCost += h.cost || 0;
-      worstCaseCost += h.costSavings?.worstCaseCost || ((250 / 1000000 * 3.00) + (300 / 1000000 * 15.00)); 
+      const modelName = h.model || 'Unknown';
+      modelDistribution[modelName] = (modelDistribution[modelName] || 0) + 1;
+      totalCost += Number(h.cost || 0);
+      worstCaseCost += Number(h.costSavings?.worstCaseCost || (h.cost ? h.cost * 1.5 : 0.001)); 
     });
+
+    const totalCostSafe = isNaN(totalCost) ? 0 : totalCost;
+    const worstCaseCostSafe = isNaN(worstCaseCost) ? totalCostSafe : Math.max(worstCaseCost, totalCostSafe);
+    const savedCostSafe = Math.max(0, worstCaseCostSafe - totalCostSafe);
+    const savingsPercentSafe = worstCaseCostSafe > 0 ? (savedCostSafe / worstCaseCostSafe) * 100 : 0;
 
     // 3. Complexity Distribution
     const complexityBuckets = {
@@ -66,23 +73,27 @@ export async function getAnalyticsDashboard(req, res, next) {
     return res.json({
       summary: {
         totalCalls: richHistory.length,
-        totalCost: parseFloat(totalCost.toFixed(6)),
-        savedCost: parseFloat((worstCaseCost - totalCost).toFixed(6)),
-        savingsPercent: worstCaseCost > 0 ? parseFloat((((worstCaseCost - totalCost) / worstCaseCost) * 100).toFixed(1)) : 0,
+        totalCost: Number(totalCostSafe.toFixed(6)),
+        savedCost: Number(savedCostSafe.toFixed(6)),
+        savingsPercent: Number(savingsPercentSafe.toFixed(1)),
       },
-      budget: budgetStats,
+      budget: budgetStats || { total: 2.0, spent: 0, remaining: 2.0, percentUsed: 0, mode: 'normal' },
       modelDistribution,
       complexityBuckets,
-      recentHistory: richHistory, // Send the full rich history
+      recentHistory: richHistory,
     });
   } catch (err) {
+    console.error('Analytics controller error:', err);
     next(err);
   }
 }
 
 export async function getSecurityDashboard(req, res, next) {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const logs = await SecurityLog.find({ userId }).sort({ timestamp: -1 }).limit(100);
 
@@ -97,9 +108,13 @@ export async function getSecurityDashboard(req, res, next) {
 
     const categoryBreakdown = {};
     logs.forEach(log => {
-      log.matchedPatterns.forEach(pattern => {
-        categoryBreakdown[pattern.label] = (categoryBreakdown[pattern.label] || 0) + 1;
-      });
+      if (Array.isArray(log.matchedPatterns)) {
+        log.matchedPatterns.forEach(pattern => {
+          if (pattern && pattern.label) {
+            categoryBreakdown[pattern.label] = (categoryBreakdown[pattern.label] || 0) + 1;
+          }
+        });
+      }
     });
 
     return res.json({
@@ -107,13 +122,14 @@ export async function getSecurityDashboard(req, res, next) {
         totalBlocked,
         totalSuspicious,
         shieldStatus: totalBlocked > 0 ? 'active_blocking' : 'monitoring',
-        savedBySecurity: parseFloat((totalBlocked * 0.005).toFixed(4)), // Est avg cost avoided
+        savedBySecurity: Number((totalBlocked * 0.005).toFixed(4)),
       },
       layerBreakdown,
       categoryBreakdown,
       recentEvents: logs.slice(0, 20),
     });
   } catch (err) {
+    console.error('Security controller error:', err);
     next(err);
   }
 }

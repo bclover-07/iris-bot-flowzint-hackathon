@@ -1,36 +1,19 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import Sidebar from '@/components/dashboard/Sidebar';
 import BudgetMeter from '@/components/ui/BudgetMeter';
-import { useBudget } from '@/hooks/useBudget';
 import { RiMenuLine, RiWallet3Line } from 'react-icons/ri';
+import { DashboardProvider, useDashboard } from '@/context/DashboardContext';
 
-export default function DashboardLayout({ children }) {
+function DashboardInner({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Use the actual user ID for the session to ensure isolation and personalization,
-  // falling back to 'demo-session-id' only if the user hasn't loaded yet.
-  const sessionId = user?._id || user?.id || 'demo-session-id';
-  const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
 
-  useEffect(() => {
-    api.get('/api/auth/me')
-      .then(data => {
-        setUser(data.user);
-        fetchStats();
-      })
-      .catch((err) => {
-        console.warn('Auth check failed:', err.message);
-        router.push('/login');
-      })
-      .finally(() => setLoading(false));
-  }, [router, fetchStats]);
+  const { user, userLoading, stats } = useDashboard();
 
   const handleLogout = async () => {
     try {
@@ -41,7 +24,7 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  if (loading) {
+  if (userLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-cream text-ink">
         <motion.div 
@@ -117,5 +100,13 @@ export default function DashboardLayout({ children }) {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }) {
+  return (
+    <DashboardProvider>
+      <DashboardInner>{children}</DashboardInner>
+    </DashboardProvider>
   );
 }

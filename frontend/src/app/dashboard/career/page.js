@@ -6,8 +6,7 @@ import ResumeUpload from '@/components/career/ResumeUpload';
 import CareerPath from '@/components/career/CareerPath';
 import LiveRoutingFeed from '@/components/dashboard/LiveRoutingFeed';
 import AgentThinkingGraph from '@/components/ui/AgentThinkingGraph';
-import { useSocket } from '@/hooks/useSocket';
-import { useBudget } from '@/hooks/useBudget';
+import { useDashboard } from '@/context/DashboardContext';
 
 export default function CareerPage() {
   const [loading, setLoading] = useState(false);
@@ -36,9 +35,13 @@ export default function CareerPage() {
     }
   }, [user]);
 
-  const sessionId = user?._id || user?.id || 'demo-session-id';
-  const { routingEvents, isConnected } = useSocket(sessionId);
-  const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
+  const {
+    isConnected,
+    routingEvents,
+    stats,
+    fetchStats,
+    sessionId,
+  } = useDashboard();
 
   const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
   const currentStep = latestStepEvent ? latestStepEvent.step : 0;

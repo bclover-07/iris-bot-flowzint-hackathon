@@ -87,7 +87,7 @@ Today's date: ${new Date().toLocaleDateString()}.`;
       const stream = await callOtariStream({
         model: selectedModel,
         messages: [
-          ...chatHistory.slice(-6),
+          ...chatHistory.slice(-10),
           { role: 'user', content: message },
         ],
         systemPrompt: finalSystemPromptSnippets.join('\n'),
@@ -145,7 +145,7 @@ Today's date: ${new Date().toLocaleDateString()}.`;
       otariResult = await callOtari({
         model: selectedModel,
         messages: [
-          ...chatHistory.slice(-6),
+          ...chatHistory.slice(-10),
           { role: 'user', content: message },
         ],
         systemPrompt: finalSystemPromptSnippets.join('\n'),

@@ -7,8 +7,7 @@ import QuizCard from '@/components/quiz/QuizCard';
 import QuizResults from '@/components/quiz/QuizResults';
 import LiveRoutingFeed from '@/components/dashboard/LiveRoutingFeed';
 import AgentThinkingGraph from '@/components/ui/AgentThinkingGraph';
-import { useSocket } from '@/hooks/useSocket';
-import { useBudget } from '@/hooks/useBudget';
+import { useDashboard } from '@/context/DashboardContext';
 
 export default function QuizPage() {
   const [loading, setLoading] = useState(false);
@@ -38,9 +37,13 @@ export default function QuizPage() {
     }
   }, [user]);
 
-  const sessionId = user?._id || user?.id || 'demo-session-id';
-  const { routingEvents, isConnected } = useSocket(sessionId);
-  const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
+  const {
+    isConnected,
+    routingEvents,
+    stats,
+    fetchStats,
+    sessionId,
+  } = useDashboard();
 
   const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
   const currentStep = latestStepEvent ? latestStepEvent.step : 0;

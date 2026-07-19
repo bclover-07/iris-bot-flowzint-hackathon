@@ -4,9 +4,8 @@ import { RiSendPlaneLine, RiLoader4Line, RiErrorWarningLine, RiAttachmentLine, R
 import { api } from '@/lib/api';
 import { motion } from 'framer-motion';
 
-export default function ChatInput({ onSend, disabled, budgetExceeded }) {
+export default function ChatInput({ onSend, disabled, isLoading, budgetExceeded }) {
   const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [attachedFileText, setAttachedFileText] = useState('');
   const [attachedFileName, setAttachedFileName] = useState('');
@@ -18,7 +17,7 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [socraticEnabled, setSocraticEnabled] = useState(false);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useCallback(() => {
     const now = Date.now();
     if (now - lastSendRef.current < 1000) return;
     
@@ -26,23 +25,22 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
       ? `[Attached Document: ${attachedFileName}]\n${attachedFileText}\n\nUser Query: ${message}` 
       : message;
 
-    if (!finalMessage.trim() || sending || disabled) return;
+    if (!finalMessage.trim() || disabled) return;
 
     lastSendRef.current = now;
-    setSending(true);
 
-    try {
-      await onSend(finalMessage.trim(), { webSearch: webSearchEnabled, socratic: socraticEnabled });
-      setMessage('');
-      setAttachedFileText('');
-      setAttachedFileName('');
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-    } finally {
-      setSending(false);
+    // Run the send callback in the background to avoid blocking the input reset
+    onSend(finalMessage.trim(), { webSearch: webSearchEnabled, socratic: socraticEnabled })
+      .catch((err) => console.error('Send error:', err));
+
+    // Instantly clear the input and attachment states
+    setMessage('');
+    setAttachedFileText('');
+    setAttachedFileName('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
     }
-  }, [message, sending, disabled, onSend, attachedFileText, attachedFileName, webSearchEnabled, socraticEnabled]);
+  }, [message, disabled, onSend, attachedFileText, attachedFileName, webSearchEnabled, socraticEnabled]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -173,10 +171,10 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={handleSend}
-            disabled={(!message.trim() && !attachedFileText) || sending || disabled || budgetExceeded}
+            disabled={(!message.trim() && !attachedFileText) || disabled || budgetExceeded}
             className="bg-iris-purple text-white border-[3px] border-ink rounded-full h-[52px] w-[52px] flex-shrink-0 flex items-center justify-center shadow-[4px_4px_0_#1A1A2E] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#1A1A2E] active:translate-y-[3px] active:shadow-[1px_1px_0_#1A1A2E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {sending ? (
+            {isLoading ? (
               <RiLoader4Line className="w-6 h-6 animate-spin text-white" />
             ) : (
               <RiSendPlaneLine className="w-6 h-6 text-white" />

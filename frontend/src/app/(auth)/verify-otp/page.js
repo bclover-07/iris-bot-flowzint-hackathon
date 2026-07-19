@@ -35,6 +35,9 @@ function VerifyOTPForm() {
         setError(data.error || 'Verification failed');
         return;
       }
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
       router.push('/dashboard');
     } catch {
       setError('Network error. Please try again.');

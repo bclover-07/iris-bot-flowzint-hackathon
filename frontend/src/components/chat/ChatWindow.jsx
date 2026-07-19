@@ -3,13 +3,22 @@ import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ChatMessage from './ChatMessage';
 import TypingIndicator from './TypingIndicator';
+import { ChatSkeleton } from '@/components/ui/Skeletons';
 
-export default function ChatWindow({ messages, isLoading }) {
+export default function ChatWindow({ messages, isLoading, historyLoaded = true }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  if (!historyLoaded) {
+    return (
+      <div className="flex-1 overflow-y-auto bg-[#FDF9F3] p-4 sm:p-6 lg:p-8 custom-scrollbar">
+        <ChatSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#FDF9F3] p-4 sm:p-6 lg:p-8 custom-scrollbar">

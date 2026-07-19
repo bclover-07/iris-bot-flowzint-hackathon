@@ -10,165 +10,19 @@ import AgentThinkingGraph from '@/components/ui/AgentThinkingGraph';
 import { useSocket } from '@/hooks/useSocket';
 import { useBudget } from '@/hooks/useBudget';
 
+import { useDashboard } from '@/context/DashboardContext';
+
 export default function DashboardPage() {
-  const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-
-  const [user, setUser] = useState(null);
-  
-  // Load state from DB on mount
-  useEffect(() => {
-    api.get('/api/auth/me').then(data => {
-      setUser(data.user);
-      const sid = data.user?._id || data.user?.id;
-      if (sid) {
-        api.get(`/api/ai/history/${sid}-dashboard`)
-          .then(res => {
-            if (res.messages && res.messages.length > 0) {
-              setMessages(res.messages);
-            }
-          })
-          .catch(err => console.error('Failed to load history:', err));
-      }
-    }).catch(() => {});
-  }, []);
-
-  // Personalized session for budget/routing isolation
-  const sessionId = user?._id || user?.id ? `${user._id || user.id}-dashboard` : 'demo-session-id-dashboard';
-  const { socket, routingEvents, isConnected, clearEvents } = useSocket(sessionId);
-  const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
-
-  const handleSend = async (text, options = {}) => {
-    const { webSearch = false, socratic = false } = options;
-    
-    // Clear stale routing events for new query
-    if (clearEvents) clearEvents();
-
-    const newMessage = { role: 'user', content: text, id: Date.now() };
-    const tempId = Date.now() + 1;
-    setMessages(prev => [...prev, newMessage, {
-      role: 'assistant',
-      content: '',
-      id: tempId,
-      isStreaming: true,
-    }]);
-    setIsLoading(true);
-
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/ai/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({ message: text, sessionId, socraticMode: socratic, webSearchMode: webSearch })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to connect to IRIS Bot stream');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-
-      let accumulatedAnswer = '';
-      let buffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunkText = decoder.decode(value, { stream: true });
-        buffer += chunkText;
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // Save incomplete line for next iteration
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (!dataStr.trim()) continue;
-            
-            try {
-              const data = JSON.parse(dataStr);
-
-              if (data.error) {
-                setMessages(prev => prev.map(m => m.id === tempId ? {
-                  ...m,
-                  content: data.message || 'An error occurred.',
-                  isError: true,
-                  isStreaming: false,
-                  injectionStatus: data.injectionStatus || 'clean'
-                } : m));
-                setIsLoading(false);
-                return;
-              }
-
-              if (data.chunk) {
-                accumulatedAnswer += data.chunk;
-                setMessages(prev => prev.map(m => m.id === tempId ? {
-                  ...m,
-                  content: accumulatedAnswer,
-                } : m));
-              }
-
-              if (data.done) {
-                setMessages(prev => prev.map(m => m.id === tempId ? {
-                  ...m,
-                  content: data.answer || accumulatedAnswer,
-                  isStreaming: false,
-                  tier: data.routing?.tier,
-                  model: data.routing?.modelDisplayName,
-                  routing: data.routing,
-                  cost: data.cost,
-                  costSavings: data.costSavings,
-                  tokens: data.tokens,
-                  injectionStatus: data.injectionStatus
-                } : m));
-                fetchStats();
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data', e);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      setMessages(prev => prev.map(m => m.id === tempId ? {
-        ...m,
-        content: err.message || 'An error occurred while connecting to IRIS Bot.',
-        isError: true,
-        isStreaming: false
-      } : m));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGenerateSummary = async () => {
-    if (messages.length === 0) return;
-    setIsLoading(true);
-    try {
-      const data = await api.get(`/api/ai/summary/${sessionId}`);
-      const recapMessage = {
-        role: 'assistant',
-        content: data.summary || "No active history to summarize.",
-        id: Date.now(),
-        routing: {
-          modelDisplayName: 'System Mentor',
-          tier: 'cached',
-          reason: 'Study session recap generated locally using Kimi K2.6.'
-        }
-      };
-      setMessages(prev => [...prev, recapMessage]);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to generate study recap: ' + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    messages,
+    isLoading,
+    historyLoaded,
+    isConnected,
+    routingEvents,
+    stats,
+    handleSend,
+    handleGenerateSummary,
+  } = useDashboard();
 
   const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
   const currentStep = latestStepEvent ? latestStepEvent.step : 0;
@@ -198,10 +52,11 @@ export default function DashboardPage() {
              </button>
            )}
          </div>
-         <ChatWindow messages={messages} isLoading={isLoading} />
+         <ChatWindow messages={messages} isLoading={isLoading} historyLoaded={historyLoaded} />
         <ChatInput 
           onSend={handleSend} 
-          disabled={!isConnected} 
+          disabled={!isConnected || isLoading} 
+          isLoading={isLoading}
           budgetExceeded={stats?.mode === 'exceeded'} 
         />
       </div>

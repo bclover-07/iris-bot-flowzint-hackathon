@@ -29,8 +29,34 @@ export async function responseNode(state) {
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
   const socketRoomId = sessionId || 'demo-session-id';
 
-  // If this was answered from RAG or Cache, skip LLM validations and saves
+  // If this was answered from RAG or Cache, still save to session history for continuity
   if (retrievedContext) {
+    if (userId && sessionId) {
+      try {
+        await Session.findOneAndUpdate(
+          { sessionId, userId },
+          {
+            $push: {
+              messages: [
+                { role: 'user', content: message },
+                {
+                  role: 'assistant',
+                  content: answer || retrievedContext.answer,
+                  routing: retrievedContext.routing,
+                  cost: 0,
+                  costSavings: { actualCost: 0, worstCaseCost: 0, saved: 0, savedPercent: 0 },
+                  tokens: { input: 0, output: 0 },
+                  injectionStatus: 'clean',
+                }
+              ]
+            }
+          },
+          { upsert: true }
+        );
+      } catch (saveErr) {
+        console.error('[responseNode] Failed to save RAG/cache messages:', saveErr.message);
+      }
+    }
     return {
       trace: ['responseNode']
     };

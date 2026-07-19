@@ -37,6 +37,9 @@ export default function LoginPage() {
           }
           return;
         }
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         router.push('/dashboard');
       } else if (mode === 'otp_request') {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login/send-otp`, {
@@ -64,6 +67,9 @@ export default function LoginPage() {
         if (!res.ok) {
           setError(data.error || 'Verification failed');
           return;
+        }
+        if (data.token) {
+          localStorage.setItem('token', data.token);
         }
         router.push('/dashboard');
       }
