@@ -81,46 +81,46 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-cream flex items-center justify-center p-4 sm:p-6 relative overflow-x-hidden">
       
       {/* Decorative background shapes */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-mint rounded-full border-3 border-ink animate-float"></div>
-      <div className="absolute bottom-20 right-10 w-16 h-16 bg-sunny border-3 border-ink rotate-12 animate-wiggle"></div>
+      <div className="hidden sm:block absolute top-10 left-10 w-20 h-20 bg-mint rounded-full border-3 border-ink animate-float"></div>
+      <div className="hidden sm:block absolute bottom-20 right-10 w-16 h-16 bg-sunny border-3 border-ink rotate-12 animate-wiggle"></div>
       
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-md mx-auto relative z-10">
         <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="neo-card card-purple p-8"
+          className="neo-card card-purple p-6 sm:p-8"
         >
-          <div className="mb-8 text-center">
-            <Link href="/" className="inline-block mb-4">
-              <span className="text-3xl font-black text-ink flex justify-center items-center gap-1">
+          <div className="mb-6 text-center">
+            <Link href="/" className="inline-block mb-2 sm:mb-3">
+              <span className="text-2xl sm:text-3xl font-black text-ink flex justify-center items-center gap-1">
                 IRIS Bot <span className="text-iris-purple">✦</span>
               </span>
             </Link>
-            <h1 className="text-3xl font-black text-ink">Welcome back</h1>
-            <p className="text-ink/60 font-medium mt-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-ink">Welcome back</h1>
+            <p className="text-ink/60 font-medium text-sm sm:text-base mt-1">
               {mode === 'password' ? 'Sign in to access your dashboard' : mode === 'otp_request' ? 'Passwordless Login / Forgot Password' : 'Enter OTP to Login'}
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-coral/20 border-3 border-coral text-coral font-bold text-sm text-center">
+            <div className="mb-4 p-3 bg-coral/20 border-3 border-coral text-coral font-bold text-sm text-center rounded-xl">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-3 bg-mint/20 border-3 border-mint text-ink font-bold text-sm text-center">
+            <div className="mb-4 p-3 bg-mint/20 border-3 border-mint text-ink font-bold text-sm text-center rounded-xl">
               {success}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 sm:gap-4">
             {(mode === 'password' || mode === 'otp_request') && (
               <div>
-                <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-1">
                   <RiMailLine className="w-4 h-4" /> Email
                 </label>
                 <input
@@ -128,7 +128,7 @@ export default function LoginPage() {
                   value={form.email}
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   required
-                  className="input-brutal text-lg"
+                  className="input-brutal text-base py-3 px-4"
                   placeholder="student@university.edu"
                 />
               </div>
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
             {mode === 'password' && (
               <div>
-                <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-1">
                   <RiLockLine className="w-4 h-4" /> Password
                 </label>
                 <input
@@ -144,7 +144,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                   required
-                  className="input-brutal text-lg"
+                  className="input-brutal text-base py-3 px-4"
                   placeholder="••••••••"
                 />
                 <button

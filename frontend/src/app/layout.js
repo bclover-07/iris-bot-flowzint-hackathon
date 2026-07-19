@@ -18,6 +18,12 @@ const caveat = Caveat({
   weight: ["700"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata = {
   title: "IRIS Bot | Build With Otari",
   description: "Cost-Aware AI Assistant for Education - Playful Neo-Brutalist Theme",

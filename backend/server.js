@@ -21,6 +21,7 @@ dotenv.config();
 await connectDB();
 
 const app = express();
+app.set('trust proxy', 1);
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: true, credentials: true }

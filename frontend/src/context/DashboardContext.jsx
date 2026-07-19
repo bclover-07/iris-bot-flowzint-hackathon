@@ -63,7 +63,7 @@ export function DashboardProvider({ children }) {
     setIsLoading(true);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
       const response = await fetch(`${baseUrl}/api/ai/chat/stream`, {
         method: 'POST',
         headers: {
@@ -75,7 +75,8 @@ export function DashboardProvider({ children }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to connect to IRIS Bot stream');
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.message || errJson.error || `Server returned ${response.status}`);
       }
 
       const reader = response.body.getReader();
