@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [otpHint, setOtpHint] = useState('');
   const [mode, setMode] = useState('password'); // 'password' | 'otp_request' | 'otp_verify'
   const [userId, setUserId] = useState(null);
 
@@ -55,7 +56,8 @@ export default function LoginPage() {
           return;
         }
         setUserId(data.userId);
-        setSuccess('OTP sent to your email. Please check your inbox.');
+        if (data.otpHint) setOtpHint(data.otpHint);
+        setSuccess(data.otpHint || 'OTP sent to your email. Please check your inbox.');
         setMode('otp_verify');
       } else if (mode === 'otp_verify') {
         const res = await fetch(`${getApiUrl()}/api/auth/login/verify-otp`, {
@@ -160,6 +162,11 @@ export default function LoginPage() {
 
             {mode === 'otp_verify' && (
               <div>
+                {otpHint && (
+                  <div className="mb-3 p-3 bg-sunny/30 border-3 border-sunny text-ink font-bold text-sm text-center rounded-xl">
+                    💡 {otpHint}
+                  </div>
+                )}
                 <label className="flex items-center gap-2 text-xs font-bold text-ink/70 uppercase tracking-widest mb-2">
                   <RiShieldCheckLine className="w-4 h-4" /> OTP Code
                 </label>

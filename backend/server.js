@@ -63,6 +63,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/', (req, res) => res.json({ status: 'IRIS Bot API is live', timestamp: new Date().toISOString() }));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/quiz', quizRoutes);
