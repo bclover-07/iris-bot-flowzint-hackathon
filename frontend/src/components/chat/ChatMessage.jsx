@@ -106,7 +106,7 @@ export default function ChatMessage({ message }) {
 
           {!isUser && message.routing && (
             <div className="mt-6 pt-5 border-t-[3px] border-ink/10 flex flex-col gap-3">
-              <RoutingChip routing={message.routing} cost={message.cost} costSavings={message.costSavings} />
+              <RoutingChip routing={message.routing} cost={message.cost} costSavings={message.costSavings} tokens={message.tokens} />
               {message.routing.reason && (
                 <p className="text-xs font-mono font-bold text-ink/70 mt-3 bg-white p-3 border-[3px] border-ink/20 rounded-xl">
                   <span className="text-ink">ROUTING_REASON:</span> {message.routing.reason}

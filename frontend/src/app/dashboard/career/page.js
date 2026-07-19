@@ -1,10 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import ResumeUpload from '@/components/career/ResumeUpload';
 import CareerPath from '@/components/career/CareerPath';
 import LiveRoutingFeed from '@/components/dashboard/LiveRoutingFeed';
+import AgentThinkingGraph from '@/components/ui/AgentThinkingGraph';
 import { useSocket } from '@/hooks/useSocket';
 import { useBudget } from '@/hooks/useBudget';
 
@@ -12,10 +13,39 @@ export default function CareerPage() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
+  const [history, setHistory] = useState([]);
 
-  const sessionId = 'demo-session-id';
+  useEffect(() => {
+    api.get('/api/auth/me').then(data => {
+      setUser(data.user);
+    }).catch(() => {});
+  }, []);
+
+  const fetchHistory = () => {
+    api.get('/api/career/history')
+      .then(res => {
+        if (res.reports) setHistory(res.reports);
+      })
+      .catch(err => console.error('Career history error:', err.message));
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchHistory();
+    }
+  }, [user]);
+
+  const sessionId = user?._id || user?.id || 'demo-session-id';
   const { routingEvents, isConnected } = useSocket(sessionId);
   const { budget: stats, fetchBudget: fetchStats } = useBudget(sessionId);
+
+  const latestStepEvent = routingEvents.find(e => e.type === 'routing_step');
+  const currentStep = latestStepEvent ? latestStepEvent.step : 0;
+  const graphStatus = latestStepEvent ? latestStepEvent.status : 'idle';
+  const graphLogs = routingEvents
+    .filter(e => e.type === 'routing_step' && e.message)
+    .map(e => e.message);
 
   const handleAnalyze = async (data) => {
     setLoading(true);
@@ -25,6 +55,7 @@ export default function CareerPage() {
       const res = await api.post('/api/career/analyze', { ...data, sessionId });
       setReport(res.paths);
       fetchStats();
+      fetchHistory();
     } catch (err) {
       if (err.data?.injectionDetected) {
         setError('PIGuard blocked analysis: Potential prompt injection detected.');
@@ -65,8 +96,39 @@ export default function CareerPage() {
         )}
 
         {!report && (
-          <div className="max-w-2xl">
+          <div className="max-w-2xl space-y-6">
             <ResumeUpload onAnalyze={handleAnalyze} loading={loading} />
+            
+            {history.length > 0 && (
+              <div className="bg-white border-[4px] border-ink shadow-[6px_6px_0_#1A1A2E] rounded-3xl p-6">
+                <h3 className="text-sm font-black uppercase tracking-widest text-ink mb-4 border-b-4 border-ink pb-2 inline-block">📜 Past Career Simulations</h3>
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
+                  {history.map((h, i) => (
+                    <div 
+                      key={h._id || i}
+                      onClick={() => setReport(h.paths)}
+                      className="cursor-pointer bg-cream border-[3px] border-ink rounded-2xl p-4 shadow-[4px_4px_0_#1A1A2E] hover:translate-y-px hover:shadow-[2px_2px_0_#1A1A2E] transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    >
+                      <div>
+                        <h4 className="font-black text-ink text-sm uppercase truncate mb-1">
+                          {h.paths && h.paths[0] ? h.paths[0].title : 'Simulated Role'}
+                        </h4>
+                        <p className="text-xs font-bold text-ink/75 truncate max-w-sm mb-1">{h.resumeSnippet || 'Uploaded Profile'}</p>
+                        <span className="text-[10px] font-bold text-ink/50 uppercase tracking-widest">{new Date(h.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-black uppercase bg-peach px-2 py-0.5 border-2 border-ink rounded-md">
+                          {h.paths?.length || 0} Paths
+                        </span>
+                        <span className="text-[10px] font-black uppercase bg-sunny px-2 py-0.5 border-2 border-ink rounded-md">
+                          India 2026
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -85,7 +147,7 @@ export default function CareerPage() {
         )}
       </div>
 
-      {/* Routing Feed Sidebar - same compact style as main dashboard */}
+      {/* Routing Feed Sidebar - matches main dashboard exactly */}
       <div className="w-full lg:w-[320px] shrink-0 z-10 h-[300px] lg:h-auto">
         <div className="bg-white border-[4px] border-ink rounded-3xl shadow-[8px_8px_0_#1A1A2E] p-4 md:p-5 h-full flex flex-col relative overflow-hidden">
           <div className="flex items-center justify-between mb-4 pb-3 border-b-[3px] border-ink shrink-0">
@@ -99,6 +161,11 @@ export default function CareerPage() {
               transition={{ duration: 2, repeat: Infinity }}
             />
           </div>
+
+          <div className="mb-4 shrink-0">
+            <AgentThinkingGraph events={routingEvents} currentStep={currentStep} status={graphStatus} logs={graphLogs} />
+          </div>
+
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 min-h-0">
             <LiveRoutingFeed events={routingEvents} />
           </div>

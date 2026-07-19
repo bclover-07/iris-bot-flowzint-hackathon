@@ -17,7 +17,8 @@ export async function llmNode(state, config = {}) {
     webSearchMode, 
     webSearchResults, 
     budgetMode,
-    sentiment
+    sentiment,
+    classification
   } = state;
   const trackingId = userId ? userId.toString() : (sessionId || 'demo-session-id');
   const socketRoomId = sessionId || 'demo-session-id';

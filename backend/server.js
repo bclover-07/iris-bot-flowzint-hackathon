@@ -41,8 +41,8 @@ app.use((req, res, next) => {
 });
 
 import mongoose from 'mongoose';
-import { isEmbeddingModelReady } from './services/embedding.service.js';
-import { isSentimentModelReady } from './services/sentiment.service.js';
+import { isEmbeddingModelReady, warmUpEmbeddingModel } from './services/embedding.service.js';
+import { isSentimentModelReady, warmUpSentimentModel } from './services/sentiment.service.js';
 
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
@@ -75,4 +75,9 @@ app.use('/api/stt', sttRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, '0.0.0.0', () => console.log(`IRIS Bot backend running on port ${PORT}`));
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`IRIS Bot backend running on port ${PORT}`);
+  // Pre-warm local models in the background so first query responds instantly
+  warmUpEmbeddingModel().catch(err => console.error('[Startup] Embedding warm up failed:', err));
+  warmUpSentimentModel().catch(err => console.error('[Startup] Sentiment warm up failed:', err));
+});

@@ -1,5 +1,6 @@
 import { getDegradedModel, recordSpend, getAllBudgetStats } from '../services/budget.service.js';
 import { callOtari } from '../services/otari.service.js';
+import { emitRoutingEvent } from '../services/socket.service.js';
 import { MODELS } from '../config/otari.js';
 import { CareerReport } from '../models/CareerReport.model.js';
 
@@ -41,6 +42,14 @@ export async function analyzeCareer(req, res, next) {
 
     await recordSpend(sessionId, model, result.cost, { tier: 'complex', score: 85, reason: 'Career analysis + web search' });
 
+    emitRoutingEvent(sessionId, {
+      tier: 'complex',
+      modelDisplayName: model.includes('Kimi') ? 'Kimi K2.6' : model.includes('Haiku') ? 'Haiku 4.5' : 'Sonnet 4.6',
+      reason: 'Career analysis requires search grounding',
+      cost: result.cost,
+      score: 85
+    });
+
     let paths;
     try {
       const cleaned = result.answer.replace(/```json|```/g, '').trim();
@@ -65,6 +74,15 @@ export async function analyzeCareer(req, res, next) {
       routing: { model, tier: 'complex', reason: 'Career analysis with live web search for salary data', webSearchUsed: true },
       cost: { thisCall: result.cost, ...budgetStats },
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getUserCareers(req, res, next) {
+  try {
+    const reports = await CareerReport.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    return res.json({ reports });
   } catch (err) {
     next(err);
   }

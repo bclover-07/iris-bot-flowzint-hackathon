@@ -18,8 +18,16 @@ export function initSocketService(socketIo) {
 
 export function emitRoutingEvent(sessionId, data) {
   if (io) {
-    console.log(`[Socket] Emitting routing-event to room [${sessionId}]:`, data.message || data.type || data);
+    console.log(`[Socket] Emitting routing-event to room [${sessionId}]`);
     io.to(sessionId).emit('routing-event', data);
+    
+    // Mirror to base userId room for unified routing feed
+    if (sessionId && sessionId.includes('-')) {
+      const baseUserId = sessionId.split('-')[0];
+      if (baseUserId && baseUserId.length === 24) {
+        io.to(baseUserId).emit('routing-event', data);
+      }
+    }
   } else {
     console.warn(`[Socket] Warning: io is not initialized!`);
   }
@@ -29,5 +37,13 @@ export function emitBudgetUpdate(sessionId, data) {
   if (io) {
     console.log(`[Socket] Emitting budget-update to room [${sessionId}]`);
     io.to(sessionId).emit('budget-update', data);
+    
+    // Mirror to base userId room
+    if (sessionId && sessionId.includes('-')) {
+      const baseUserId = sessionId.split('-')[0];
+      if (baseUserId && baseUserId.length === 24) {
+        io.to(baseUserId).emit('budget-update', data);
+      }
+    }
   }
 }

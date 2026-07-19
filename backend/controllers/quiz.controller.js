@@ -138,3 +138,12 @@ export async function submitQuizAnswers(req, res, next) {
     next(err);
   }
 }
+
+export async function getUserQuizzes(req, res, next) {
+  try {
+    const quizzes = await QuizAttempt.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    return res.json({ quizzes });
+  } catch (err) {
+    next(err);
+  }
+}

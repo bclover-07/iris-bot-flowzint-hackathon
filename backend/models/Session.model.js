@@ -5,6 +5,7 @@ const messageSchema = new mongoose.Schema({
   content: { type: String, required: true },
   routing: {
     model: String,
+    modelDisplayName: String,
     tier: String,
     score: Number,
     reason: String,

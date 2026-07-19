@@ -109,9 +109,11 @@ export async function getChatHistory(req, res, next) {
       content: msg.content,
       id: msg._id,
       tier: msg.routing?.tier,
-      model: msg.routing?.model,
+      model: msg.routing?.modelDisplayName || msg.routing?.model,
       routing: msg.routing,
       cost: msg.cost,
+      costSavings: msg.costSavings,
+      tokens: msg.tokens,
       injectionStatus: msg.injectionStatus
     }));
 

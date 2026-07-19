@@ -63,6 +63,7 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
+        credentials: 'include',
         body: JSON.stringify({ message: text, sessionId, socraticMode: socratic, webSearchMode: webSearch })
       });
 
@@ -122,6 +123,7 @@ export default function DashboardPage() {
                   routing: data.routing,
                   cost: data.cost,
                   costSavings: data.costSavings,
+                  tokens: data.tokens,
                   injectionStatus: data.injectionStatus
                 } : m));
                 fetchStats();
@@ -173,8 +175,7 @@ export default function DashboardPage() {
   const graphStatus = latestStepEvent ? latestStepEvent.status : 'idle';
   const graphLogs = routingEvents
     .filter(e => e.type === 'routing_step' && e.message)
-    .map(e => e.message)
-    .reverse();
+    .map(e => e.message);
 
   return (
     <div className="h-full min-h-full pb-3 pr-2 flex flex-col lg:flex-row gap-4 lg:gap-6 relative">

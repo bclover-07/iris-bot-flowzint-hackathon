@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
-export default function RoutingChip({ routing, cost, costSavings }) {
+export default function RoutingChip({ routing, cost, costSavings, tokens }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
@@ -36,6 +36,15 @@ export default function RoutingChip({ routing, cost, costSavings }) {
             <span className="font-mono font-bold text-xs text-ink/70">Cost:</span>
             <span className="font-mono font-bold text-xs ml-2 text-ink">
               ${Number(cost).toFixed(6)}
+            </span>
+          </div>
+        )}
+
+        {tokens && (tokens.input > 0 || tokens.output > 0) && (
+          <div className="inline-flex items-center px-4 py-2 border-[3px] border-ink bg-[#E8F0FE] rounded-full shadow-[4px_4px_0_#1A1A2E]">
+            <span className="font-mono font-black text-xs text-ink/75 uppercase tracking-wider">Tokens:</span>
+            <span className="font-mono font-bold text-xs ml-2 text-ink">
+              {tokens.input} In / {tokens.output} Out
             </span>
           </div>
         )}

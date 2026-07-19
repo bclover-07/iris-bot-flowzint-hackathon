@@ -39,8 +39,8 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
   };
 
   return (
-    <div className="bg-white border-[3px] border-ink rounded-2xl p-4 shadow-[4px_4px_0_#1A1A2E] w-full">
-      <div className="flex items-center justify-between mb-4 border-b-[2px] border-ink/10 pb-2">
+    <div className="bg-white border-[3px] border-ink rounded-2xl p-4 shadow-[4px_4px_0_#1A1A2E] w-full flex flex-col min-h-0">
+      <div className="flex items-center justify-between mb-4 border-b-[2px] border-ink/10 pb-2 shrink-0">
         <h4 className="text-[10px] font-black uppercase text-ink/65 tracking-[0.2em]">
           Cognitive Decision Flow
         </h4>
@@ -52,7 +52,7 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
       </div>
 
       {/* Vertical Steps Timeline */}
-      <div className="relative pl-3 space-y-4">
+      <div className="relative pl-3 space-y-4 max-h-[360px] overflow-y-auto pr-1 min-h-0">
         {/* Continuous Pipeline Connector Line */}
         <div className="absolute left-[20px] top-[10px] bottom-[15px] w-[3px] bg-ink/10 rounded" />
         
@@ -125,11 +125,11 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-1 bg-cream/35 border border-ink/10 rounded-lg p-1.5 font-mono text-[9px] text-ink/75 space-y-1 shadow-[1px_1px_0_rgba(0,0,0,0.02)]"
+                    className="mt-1 bg-cream/35 border border-ink/10 rounded-lg p-2 font-mono text-[11px] text-ink/75 space-y-1 shadow-[1px_1px_0_rgba(0,0,0,0.02)]"
                   >
                     {/* Render specific metrics per step */}
                     {step.id === 1 && stepData && (
-                      <div className="flex items-center gap-1 text-[10px]">
+                      <div className="flex items-center gap-1.5 text-xs">
                         <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-white font-bold">{stepData.label} {stepData.emoji}</span>
                         <span className="text-ink/50">Score: {Math.round(stepData.score * 100)}%</span>
                         <span className="text-ink/50">Trend: {stepData.trend}</span>
@@ -137,8 +137,8 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
                     )}
 
                     {step.id === 2 && stepData && (
-                      <div className="flex items-center gap-1.5">
-                        <span className={`px-1.5 py-0.5 rounded border text-[8px] font-black uppercase ${
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className={`px-1.5 py-0.5 rounded border text-[10px] font-black uppercase ${
                           stepData.isInjection ? 'bg-coral/10 border-coral text-coral' : 'bg-mint/10 border-mint text-ink'
                         }`}>
                           {stepData.threatLevel.toUpperCase()}
@@ -148,31 +148,31 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
                     )}
 
                     {step.id === 3 && stepData && (
-                      <div className="flex flex-col gap-0.5">
+                      <div className="flex flex-col gap-0.5 text-xs">
                         <div className="flex items-center gap-1.5">
                           <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-white font-bold uppercase">{stepData.source}</span>
                           {stepData.score && <span className="text-ink/50">Match: {stepData.score}%</span>}
                         </div>
-                        {stepData.direct && <span className="text-[8px] font-black text-mint uppercase">⚡ Direct bypass (Bypassed LLM)</span>}
+                        {stepData.direct && <span className="text-[10px] font-black text-mint uppercase">⚡ Direct bypass (Bypassed LLM)</span>}
                       </div>
                     )}
 
                     {step.id === 4 && stepData && (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 text-xs">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="px-1.5 py-0.5 rounded border border-ink/15 bg-sunny font-bold">{stepData.modelDisplayName}</span>
-                          <span className="text-ink/50 uppercase text-[8px]">Tier: {stepData.classification?.tier}</span>
+                          <span className="text-ink/50 uppercase text-[10px]">Tier: {stepData.classification?.tier}</span>
                           {stepData.degraded && (
-                            <span className="px-1 py-0.5 bg-coral text-white font-bold rounded text-[7px] uppercase animate-pulse">Budget Degraded</span>
+                            <span className="px-1.5 py-0.5 bg-coral text-white font-bold rounded text-[9px] uppercase animate-pulse">Budget Degraded</span>
                           )}
                         </div>
-                        <p className="text-[8.5px] text-ink/60 italic leading-tight">{stepData.routingReason}</p>
+                        <p className="text-[10px] text-ink/60 italic leading-tight">{stepData.routingReason}</p>
                       </div>
                     )}
 
                     {step.id === 5 && stepData && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-ink/50">In: <b>{stepData.tokens?.input}</b> / Out: <b>{stepData.tokens?.output}</b> toks</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-ink/60">In: <b>{stepData.tokens?.input || stepData.inputTokens || 0}</b> / Out: <b>{stepData.tokens?.output || stepData.outputTokens || 0}</b> toks</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-ink/20" />
                         <span className="font-bold text-ink/75">Cost: ${stepData.cost?.toFixed(6)}</span>
                       </div>
@@ -205,19 +205,31 @@ export default function AgentThinkingGraph({ events = [], currentStep = 0, statu
       </div>
 
       {/* Log Feed Console */}
-      <AnimatePresence mode="wait">
-        {logs.length > 0 && (
-          <motion.div
-            key={logs[0]}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            className="mt-4 bg-ink text-cream border-2 border-ink rounded-xl p-2.5 font-mono text-[9px] font-bold tracking-tight shadow-[2px_2px_0_rgba(0,0,0,0.15)] max-h-[55px] overflow-hidden"
-          >
-            <span className="text-sunny">$ iris-agent:</span> {logs[0]}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {logs.length > 0 && (
+        <div className="mt-4 bg-ink text-cream border-[3px] border-ink rounded-2xl p-3 font-mono text-[9px] tracking-tight shadow-[3px_3px_0_rgba(0,0,0,0.15)] max-h-[110px] overflow-y-auto flex flex-col gap-1.5 shrink-0 select-none">
+          <div className="text-[10px] font-black uppercase text-sunny border-b border-white/20 pb-1 mb-1 flex items-center justify-between shrink-0">
+            <span>⚙️ Live Execution Terminal</span>
+            <span className="text-[7px] text-white/50 lowercase">latest on top</span>
+          </div>
+          <div className="flex flex-col gap-1 overflow-y-auto pr-1">
+            <AnimatePresence initial={false}>
+              {logs.map((log, index) => (
+                <motion.div
+                  key={`${index}-${log}`}
+                  initial={index === 0 ? { opacity: 0, x: -10 } : { opacity: 1 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`leading-normal flex items-start gap-1 ${
+                    index === 0 ? 'text-sunny font-black' : 'text-white/60'
+                  }`}
+                >
+                  <span className="shrink-0">{index === 0 ? '▶' : '•'}</span>
+                  <span className="break-words">{log}</span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
