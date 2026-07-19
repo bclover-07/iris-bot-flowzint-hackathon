@@ -39,9 +39,8 @@ export default function QuizUpload({ onGenerate, loading }) {
       const data = await api.post('/api/upload/pdf', formData);
       setNoteContent(data.text);
     } catch (err) {
-      console.error(err);
-      alert('Failed to parse PDF.');
-      setFileName('');
+      console.error('PDF parsing failed:', err);
+      setNoteContent('[We could not automatically extract text from this PDF. Please paste your study notes here manually to generate a quiz.]');
     } finally {
       setFileLoading(false);
     }

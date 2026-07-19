@@ -73,8 +73,9 @@ export default function ChatInput({ onSend, disabled, budgetExceeded }) {
       setAttachedFileText(data.text);
       setAttachedFileName(file.name);
     } catch (err) {
-      console.error(err);
-      alert('Failed to process document or image.');
+      console.error('File upload failed:', err);
+      setAttachedFileText('[Attachment uploaded: We encountered an issue reading this file. You can still ask your question or describe what is in the document.]');
+      setAttachedFileName(file.name || 'document');
     } finally {
       setUploading(false);
       // Reset input

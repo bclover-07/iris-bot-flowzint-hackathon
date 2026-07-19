@@ -4,13 +4,35 @@ import { otariClient } from '../config/otari.js';
 dotenv.config();
 
 let geminiClient = null;
+let isGeminiServiceFunctional = true;
+
+function isAuthOrQuotaError(err) {
+  if (!err) return false;
+  const msg = String(err.message || err).toLowerCase();
+  const status = err.status || (err.response && err.response.status);
+  return status === 400 || 
+         status === 401 || 
+         status === 403 || 
+         status === 429 || 
+         msg.includes('key') || 
+         msg.includes('auth') || 
+         msg.includes('unauthorized') || 
+         msg.includes('forbidden') || 
+         msg.includes('quota') || 
+         msg.includes('limit') || 
+         msg.includes('credentials') ||
+         msg.includes('not found') ||
+         msg.includes('invalid');
+}
 
 function getGeminiClient() {
+  if (!isGeminiServiceFunctional) return null;
   if (geminiClient) return geminiClient;
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     console.warn('[Gemini] GEMINI_API_KEY is not configured. Gemini features will run in fallback simulation/Otari mode.');
+    isGeminiServiceFunctional = false;
     return null;
   }
 
@@ -19,6 +41,10 @@ function getGeminiClient() {
     return geminiClient;
   } catch (err) {
     console.error('[Gemini] Failed to initialize GoogleGenAI client:', err.message);
+    if (isAuthOrQuotaError(err)) {
+      console.warn('[Gemini] Client initialization failed due to auth/key issue. Disabling Gemini service.');
+      isGeminiServiceFunctional = false;
+    }
     return null;
   }
 }
@@ -104,6 +130,11 @@ export async function analyzeImage(imageBuffer, mimeType, prompt = 'Describe thi
         return response.text;
       } catch (err) {
         console.warn(`[Gemini Vision Fallback] Model ${model} failed:`, err.message);
+        if (isAuthOrQuotaError(err)) {
+          console.warn('[Gemini Service] Gemini API key failed validation. Switching to Otari fallback permanently.');
+          isGeminiServiceFunctional = false;
+          break;
+        }
       }
     }
   }
@@ -167,6 +198,11 @@ export async function searchGrounded(prompt) {
         return response.text;
       } catch (err) {
         console.warn(`[Gemini Grounding Fallback] Model ${model} failed:`, err.message);
+        if (isAuthOrQuotaError(err)) {
+          console.warn('[Gemini Service] Gemini API key failed validation. Switching to Otari fallback permanently.');
+          isGeminiServiceFunctional = false;
+          break;
+        }
       }
     }
   }
