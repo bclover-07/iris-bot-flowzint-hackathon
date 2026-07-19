@@ -20,7 +20,7 @@ async function getSentimentPipeline() {
     sentimentPipeline = await pipeline(
       'sentiment-analysis',
       'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
-      { dtype: 'fp32' }
+      { quantized: true }
     );
     console.log(`[Sentiment] Model loaded in ${Date.now() - startMs}ms`);
   } catch (err) {

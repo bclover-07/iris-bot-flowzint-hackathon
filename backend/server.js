@@ -78,7 +78,10 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`IRIS Bot backend running on port ${PORT}`);
-  // Pre-warm local models in the background so first query responds instantly
-  warmUpEmbeddingModel().catch(err => console.error('[Startup] Embedding warm up failed:', err));
-  warmUpSentimentModel().catch(err => console.error('[Startup] Sentiment warm up failed:', err));
+  // Sequential model warm-up after 5 seconds to prevent Render 512MB RAM spikes
+  setTimeout(() => {
+    warmUpEmbeddingModel()
+      .then(() => warmUpSentimentModel())
+      .catch(err => console.error('[Startup] Model warm up info:', err.message));
+  }, 5000);
 });
