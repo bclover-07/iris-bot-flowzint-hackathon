@@ -167,7 +167,7 @@ export default function LoginPage() {
                     <div className="mb-3 p-3 bg-sunny/30 border-3 border-sunny text-ink font-bold text-sm text-center rounded-xl">
                       💡 {otpHint}
                     </div>
-                    <p className="text-[10px] text-ink/50 text-center mb-3 italic">
+                    <p className="text-xs font-bold text-ink/90 text-center mb-3 italic">
                       ⚠️ OTP is displayed on-screen due to Render&apos;s free-tier SMTP restrictions. For demo purposes only.
                     </p>
                   </>

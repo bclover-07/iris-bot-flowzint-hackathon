@@ -93,7 +93,7 @@ function VerifyOTPForm() {
             <div className="mb-3 p-3 bg-sunny/40 border-3 border-ink text-ink font-bold text-xs text-center rounded-xl">
               💡 {searchParams.get('hint')}
             </div>
-            <p className="text-[10px] text-ink/50 text-center mb-4 italic">
+            <p className="text-xs font-bold text-ink/90 text-center mb-4 italic">
               ⚠️ OTP is displayed on-screen due to Render&apos;s free-tier SMTP restrictions. For demo purposes only.
             </p>
           </>
