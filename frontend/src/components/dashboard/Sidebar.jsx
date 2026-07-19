@@ -44,6 +44,8 @@ export default function Sidebar({ user, onLogout, isOpen, onClose }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
+              onClick={onClose}
               className={`flex items-center gap-4 px-5 py-4 font-bold transition-all border-[4px] rounded-2xl relative
                 ${active
                   ? `bg-${item.color}/10 border-${item.color} shadow-[6px_6px_0_var(--color-${item.color})] text-ink translate-y-[-2px]`

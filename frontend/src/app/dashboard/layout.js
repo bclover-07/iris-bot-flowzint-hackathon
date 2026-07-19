@@ -107,9 +107,9 @@ export default function DashboardLayout({ children }) {
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-cream relative z-0 custom-scrollbar">
           <motion.div
             key={pathname}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
             className="h-full"
           >
             {children}

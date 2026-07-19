@@ -85,8 +85,9 @@ export default function QuizPage() {
 
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 relative">
-      <div className="flex-1 overflow-y-auto pr-2 relative z-10 custom-scrollbar">
-        {/* Page Title */}
+      <div className="flex-1 overflow-y-auto pr-2 relative z-10 custom-scrollbar flex flex-col items-center">
+        <div className="w-full max-w-3xl space-y-6 py-2">
+          {/* Page Title */}
         <motion.div 
           className="mb-8"
           initial={{ opacity: 0, x: -20 }}
@@ -112,7 +113,7 @@ export default function QuizPage() {
         )}
 
         {!quiz && !results && (
-          <div className="max-w-2xl space-y-6">
+          <div className="space-y-6">
             <QuizUpload onGenerate={handleGenerate} loading={loading} />
             
             {history.length > 0 && (
@@ -170,19 +171,20 @@ export default function QuizPage() {
         )}
 
         {quiz && !results && (
-          <div className="max-w-3xl">
+          <div>
             <QuizCard quiz={quiz} onSubmit={handleSubmit} loading={loading} />
           </div>
         )}
 
         {results && (
-          <div className="max-w-3xl">
+          <div>
             <QuizResults results={results} onRetry={() => {
               setQuiz(null);
               setResults(null);
             }} />
           </div>
         )}
+        </div>
       </div>
 
       {/* Routing Feed Sidebar - matches main dashboard exactly */}

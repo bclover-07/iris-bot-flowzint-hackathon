@@ -96,9 +96,10 @@ export default function AnalyticsDashboard() {
           </div>
 
           <div className="flex flex-col gap-1 bg-cream border-2 border-ink p-4 rounded-xl shadow-[4px_4px_0_#1A1A2E]">
-            <span className="text-xs uppercase font-black text-ink/60">Est. Remaining Queries</span>
-            <span className="text-4xl font-black text-coral">{remainingQueries}</span>
-            <span className="text-xs font-bold text-ink/70">at current burn rate</span>
+            <span className="text-xs uppercase font-black text-ink/60">Budget Remaining</span>
+            <span className="text-4xl font-black text-coral">${data.budget.remaining.toFixed(4)}</span>
+            <span className="text-sm font-black text-ink/50 mt-1">≈ {remainingQueries} queries left</span>
+            <span className="text-xs font-bold text-ink/70">at ${avgCostPerQuery.toFixed(4)} avg/query</span>
           </div>
         </div>
 

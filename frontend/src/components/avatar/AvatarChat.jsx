@@ -578,30 +578,34 @@ export default function AvatarChat() {
     setIsListening(true);
   }, [handleSend]);
 
+  const stopSpeaking = useCallback(() => {
+    if (currentSourceRef.current) {
+      try { currentSourceRef.current.stop(); } catch (e) {}
+      currentSourceRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+    if (expressionCtrlRef.current) {
+      expressionCtrlRef.current.stopSpeaking();
+      expressionCtrlRef.current.clearExpression();
+    }
+    if (gestureEngineRef.current) {
+      gestureEngineRef.current.clearQueue();
+      gestureEngineRef.current.setGesture(null);
+    }
+    if (idleSystemRef.current) {
+      idleSystemRef.current.setTalking(false);
+      idleSystemRef.current.setDoingGesture(false);
+    }
+    setIsSpeaking(false);
+    setStatus('Ready');
+  }, []);
+
   const toggleTTS = useCallback(() => {
     if (isSpeaking) {
-      if (currentSourceRef.current) {
-        try { currentSourceRef.current.stop(); } catch (e) {}
-        currentSourceRef.current = null;
-      }
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (expressionCtrlRef.current) {
-        expressionCtrlRef.current.stopSpeaking();
-        expressionCtrlRef.current.clearExpression();
-      }
-      if (gestureEngineRef.current) {
-        gestureEngineRef.current.clearQueue();
-        gestureEngineRef.current.setGesture(null);
-      }
-      if (idleSystemRef.current) {
-        idleSystemRef.current.setTalking(false);
-        idleSystemRef.current.setDoingGesture(false);
-      }
-      setIsSpeaking(false);
-      setStatus('Ready');
+      stopSpeaking();
     }
     setTtsEnabled(prev => !prev);
-  }, [isSpeaking]);
+  }, [isSpeaking, stopSpeaking]);
 
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6">
@@ -630,18 +634,45 @@ export default function AvatarChat() {
           </motion.div>
         </div>
 
-        {/* TTS toggle */}
-        <button
-          onClick={toggleTTS}
-          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white border-[3px] border-ink rounded-full flex items-center justify-center shadow-[3px_3px_0_#1A1A2E] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1A1A2E] active:translate-y-[2px] active:shadow-[1px_1px_0_#1A1A2E] transition-all"
-          title={ttsEnabled ? 'Mute voice' : 'Unmute voice'}
-        >
-          {ttsEnabled ? (
-            <RiVolumeUpLine className="w-5 h-5 text-ink" />
-          ) : (
-            <RiVolumeMuteLine className="w-5 h-5 text-ink/50" />
-          )}
-        </button>
+        {/* TTS / Stop Speaking Controls */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          {/* Stop Speaking Button — only visible while speaking */}
+          <AnimatePresence>
+            {isSpeaking && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.15 }}
+                onClick={stopSpeaking}
+                className="h-10 px-4 bg-coral text-white border-[3px] border-ink rounded-full flex items-center gap-2 shadow-[3px_3px_0_#1A1A2E] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1A1A2E] active:translate-y-[2px] active:shadow-[1px_1px_0_#1A1A2E] transition-all"
+                title="Stop speaking"
+              >
+                <motion.div
+                  className="w-2.5 h-2.5 rounded-full bg-white"
+                  animate={{ scale: [1, 1.4, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                />
+                <span className="font-black text-xs uppercase tracking-wider">Stop</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* TTS On/Off Toggle */}
+          <button
+            onClick={toggleTTS}
+            className={`w-10 h-10 border-[3px] border-ink rounded-full flex items-center justify-center shadow-[3px_3px_0_#1A1A2E] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1A1A2E] active:translate-y-[2px] active:shadow-[1px_1px_0_#1A1A2E] transition-all ${
+              ttsEnabled ? 'bg-white' : 'bg-ink/10'
+            }`}
+            title={ttsEnabled ? 'Mute voice' : 'Unmute voice'}
+          >
+            {ttsEnabled ? (
+              <RiVolumeUpLine className="w-5 h-5 text-ink" />
+            ) : (
+              <RiVolumeMuteLine className="w-5 h-5 text-ink/40" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Chat Panel */}
