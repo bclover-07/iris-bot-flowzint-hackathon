@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { RiMailLine, RiLockLine, RiArrowRightLine, RiLoader4Line, RiShieldCheckLine } from 'react-icons/ri';
+import { getApiUrl } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     try {
       if (mode === 'password') {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+        const res = await fetch(`${getApiUrl()}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -42,7 +43,7 @@ export default function LoginPage() {
         }
         router.push('/dashboard');
       } else if (mode === 'otp_request') {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login/send-otp`, {
+        const res = await fetch(`${getApiUrl()}/api/auth/login/send-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -57,7 +58,7 @@ export default function LoginPage() {
         setSuccess('OTP sent to your email. Please check your inbox.');
         setMode('otp_verify');
       } else if (mode === 'otp_verify') {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login/verify-otp`, {
+        const res = await fetch(`${getApiUrl()}/api/auth/login/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

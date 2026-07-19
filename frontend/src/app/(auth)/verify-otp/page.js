@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { RiShieldCheckLine, RiArrowRightLine, RiLoader4Line } from 'react-icons/ri';
+import { getApiUrl } from '@/lib/api';
 
 function VerifyOTPForm() {
   const router = useRouter();
@@ -24,7 +25,7 @@ function VerifyOTPForm() {
     setError('');
     setSuccessMsg('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/verify-otp`, {
+      const res = await fetch(`${getApiUrl()}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -52,7 +53,7 @@ function VerifyOTPForm() {
     setError('');
     setSuccessMsg('');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/resend-otp`, {
+      const res = await fetch(`${getApiUrl()}/api/auth/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
