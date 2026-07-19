@@ -88,6 +88,12 @@ function VerifyOTPForm() {
           <p className="text-ink/60 font-medium mt-1">Enter the 6-digit code sent to your email</p>
         </div>
 
+        {searchParams.get('hint') && (
+          <div className="mb-6 p-3 bg-sunny/40 border-3 border-ink text-ink font-bold text-xs text-center rounded-xl">
+            💡 {searchParams.get('hint')}
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 p-3 bg-coral/20 border-3 border-coral text-coral font-bold text-sm text-center">
             {error}

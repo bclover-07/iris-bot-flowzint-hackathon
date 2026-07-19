@@ -29,7 +29,8 @@ export default function RegisterPage() {
         return;
       }
       if (data.userId) {
-        router.push(`/verify-otp?userId=${data.userId}`);
+        const hintParam = data.otpHint ? `&hint=${encodeURIComponent(data.otpHint)}` : '';
+        router.push(`/verify-otp?userId=${data.userId}${hintParam}`);
       } else {
         router.push('/login');
       }

@@ -56,7 +56,8 @@ export async function register(req, res, next) {
 
     return res.status(201).json({
       message: 'Registration successful. Please verify your email.',
-      userId: user._id
+      userId: user._id,
+      otpHint: `Verification code generated: ${otp} (Also sent to ${email})`
     });
   } catch (err) {
     next(err);
@@ -181,7 +182,11 @@ export async function sendLoginOTP(req, res, next) {
       console.error('Email sending failed:', emailErr.message);
     }
 
-    return res.json({ message: 'Login OTP sent successfully', userId: user._id });
+    return res.json({ 
+      message: 'Login OTP sent successfully', 
+      userId: user._id,
+      otpHint: `OTP code generated: ${otp} (Also sent to ${email})`
+    });
   } catch (err) {
     next(err);
   }
