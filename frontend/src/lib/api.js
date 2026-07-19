@@ -1,4 +1,14 @@
-const getApiUrl = () => (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+export const getApiUrl = () => {
+  let url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url || (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.includes('localhost'))) {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      url = 'https://iris-bot-web.onrender.com';
+    } else {
+      url = 'http://localhost:5000';
+    }
+  }
+  return url.replace(/\/$/, '');
+};
 
 async function request(path, options = {}) {
   const url = `${getApiUrl()}${path}`;

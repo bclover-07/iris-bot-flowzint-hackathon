@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { api, getApiUrl } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
 import { useBudget } from '@/hooks/useBudget';
 
@@ -63,7 +63,7 @@ export function DashboardProvider({ children }) {
     setIsLoading(true);
 
     try {
-      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+      const baseUrl = getApiUrl();
       const response = await fetch(`${baseUrl}/api/ai/chat/stream`, {
         method: 'POST',
         headers: {

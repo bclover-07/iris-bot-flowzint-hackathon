@@ -21,6 +21,59 @@ export async function ragNode(state) {
 
   const budgetStatsBefore = await getAllBudgetStats(trackingId);
 
+  // 0. Zero-Cost Instant Greetings & Repetitive Query Bypass
+  const cleanMsg = (message || '').toLowerCase().trim().replace(/[^\w\s]/g, '');
+  const GREETINGS_MAP = {
+    'hello': "Hello! I am IRIS Bot, your intelligent, cost-aware AI study assistant. How can I help you with your studies today?",
+    'hi': "Hi there! Welcome to IRIS Bot. What topic or concept would you like to explore today?",
+    'hey': "Hey! Ready to learn? Ask me anything from math and computer science to exam prep!",
+    'namaste': "Namaste! 🙏 Welcome to IRIS Bot. Aapka aaj kya padhne ka mann hai?",
+    'namaskar': "Namaskar! 🙏 IRIS Bot me aapka swagat hai. Main aapki kya madad kar sakta hoon?",
+    'good morning': "Good morning! ☀️ Ready for a productive study session? What are we focusing on today?",
+    'good evening': "Good evening! 🌙 How can I assist with your homework or study revision tonight?",
+    'who are you': "I am IRIS Bot, an intelligent educational assistant built with dynamic model routing to optimize learning, cost, and security.",
+    'what can you do': "I can answer study queries, summarize chat sessions, generate quizzes, guide you through career simulations, and provide real-time web search results!"
+  };
+
+  if (GREETINGS_MAP[cleanMsg]) {
+    const routing = {
+      model: 'Local KB (Direct)',
+      tier: 'cached',
+      reason: 'Answered directly from zero-cost local greetings cache ($0.00 token cost)',
+      score: 100,
+      modelDisplayName: 'Local KB',
+      degraded: false,
+      budgetMode: budgetStatsBefore.mode,
+    };
+
+    emitRoutingEvent(socketRoomId, {
+      type: 'routing_step',
+      step: 3,
+      status: 'done',
+      message: 'Greeting Cache Match: Direct Answer ($0.00 token cost)',
+      data: { source: 'knowledge-base', score: 1.0, direct: true },
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      retrievedContext: {
+        answer: GREETINGS_MAP[cleanMsg],
+        source: 'knowledge-base',
+        routing,
+        cost: {
+          thisCall: 0,
+          thisCallFormatted: '$0.000000',
+          spent: budgetStatsBefore.spent,
+          remaining: budgetStatsBefore.remaining,
+          percentUsed: budgetStatsBefore.percentUsed,
+          mode: budgetStatsBefore.mode,
+        },
+      },
+      answer: GREETINGS_MAP[cleanMsg],
+      trace: ['ragNode']
+    };
+  }
+
   // 1. Zero-Cost Semantic Caching / RAG
   const ragResult = await searchKnowledgeBase(message);
   if (ragResult && ragResult.score > 0.55) {
